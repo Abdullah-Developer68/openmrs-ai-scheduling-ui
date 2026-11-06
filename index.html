@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenMRS 3.x - AI-Augmented Outpatient Scheduling Prototype</title>
+  <style>
+    :root {
+      --primary: #0F62FE;
+      --primary-dark: #0043CE;
+      --navy: #102C57;
+      --bg: #F4F7FB;
+      --card-bg: #FFFFFF;
+      --text-main: #161616;
+      --text-muted: #525252;
+      --border: #E0E0E0;
+      --success: #198038;
+      --success-light: #DEFBE6;
+      --warning: #F1C21B;
+      --warning-dark: #8A6D00;
+      --warning-light: #FDF3D8;
+      --danger: #DA1E28;
+      --danger-light: #FFE3E5;
+      --ai-purple: #8A3FFC;
+      --ai-purple-light: #F6F2FF;
+      --radius: 6px;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-family); background: var(--bg); color: var(--text-main); font-size: 14px; line-height: 1.5; }
+
+    /* Top Navigation Bar */
+    header {
+      background: var(--navy);
+      color: #FFFFFF;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 16px; }
+    .brand-badge { background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: normal; }
+    .nav-user { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #E0E0E0; }
+
+    /* Prototype State Switcher Toolbar */
+    .prototype-bar {
+      background: #262626;
+      color: #F4F4F4;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .prototype-bar span { font-weight: 600; color: #A8A8A8; }
+    .proto-btn {
+      background: #393939;
+      color: #FFFFFF;
+      border: 1px solid #525252;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .proto-btn:hover { background: #525252; }
+    .proto-btn.active { background: var(--primary); border-color: var(--primary); font-weight: 600; }
+
+    /* Main Container */
+    .container { max-width: 1360px; margin: 24px auto; padding: 0 24px; }
+
+    /* Breadcrumb & Title */
+    .breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: 10px; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-ai { background: var(--ai-purple-light); color: var(--ai-purple); border: 1px solid #D4BBFF; }
+    .badge-rule { background: #E0E0E0; color: #393939; border: 1px solid #C6C6C6; }
+    .badge-high { background: var(--danger-light); color: var(--danger); border: 1px solid #FFB3B8; }
+    .badge-med { background: var(--warning-light); color: var(--warning-dark); border: 1px solid #F1C21B; }
+    .badge-low { background: var(--success-light); color: var(--success); border: 1px solid #A7F0BA; }
+
+    /* Cards & Layout */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--navy); display: flex; justify-content: space-between; align-items: center; }
+
+    /* Patient Banner */
+    .patient-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .patient-info { display: flex; gap: 24px; align-items: center; }
+    .patient-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #E0E7FF; color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+    }
+    .patient-meta h2 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+    .patient-meta p { font-size: 12px; color: var(--text-muted); }
+
+    /* Grid Layout */
+    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+
+    /* Tables */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { background: #F4F4F4; color: var(--text-muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #FAFAFA; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #FFFFFF; border-color: var(--border); color: var(--text-main); }
+    .btn-secondary:hover { background: #F4F4F4; }
+    .btn-success { background: var(--success); color: #FFFFFF; }
+    .btn-danger { background: var(--danger); color: #FFFFFF; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    /* System Banners */
+    .banner {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .banner-warning { background: var(--warning-light); border: 1px solid #F1C21B; color: #524000; }
+    .banner-danger { background: var(--danger-light); border: 1px solid var(--danger); color: #750E13; }
+    .banner-info { background: #EDF5FF; border: 1px solid #A6C8FF; color: #002D9C; }
+
+    /* SHAP Feature Contribution Bars */
+    .shap-bar-group { margin: 8px 0; }
+    .shap-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+    .shap-track { background: #E0E0E0; height: 6px; border-radius: 3px; overflow: hidden; }
+    .shap-fill { height: 100%; border-radius: 3px; }
+    .shap-fill-risk { background: var(--danger); }
+    .shap-fill-protective { background: var(--success); }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #FFFFFF;
+      border-radius: 8px;
+      width: 600px;
+      max-width: 90%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .modal-header {
+      background: #F4F7FB;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      background: #F4F7FB;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Skeleton Loading State */
+    .skeleton {
+      background: linear-gradient(90deg, #F0F0F0 25%, #E0E0E0 50%, #F0F0F0 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-text { height: 14px; margin-bottom: 8px; }
+    .skeleton-box { height: 40px; margin-bottom: 12px; }
+
+    /* Hide / Show Tabs */
+    .view-panel { display: none; }
+    .view-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+      <span>OpenMRS 3.x Outpatient Clinic</span>
+      <span class="brand-badge">AI Scheduling Subsystem v2.1</span>
+    </div>
+    <div class="nav-user">
+      <span>Facility: <b>Regional Referral Hospital (ID: OPD-01)</b></span>
+      <span>User: <b>Clerk A. Rahman (Registration &amp; Triage)</b></span>
+    </div>
+  </header>
+
+  <!-- Prototype Interactive Control Toolbar -->
+  <div class="prototype-bar">
+    <span>PROTOTYPE VIEWS &amp; AI STATES:</span>
+    <button class="proto-btn active" onclick="switchView('screen-booking')">1. Modified Booking Screen</button>
+    <button class="proto-btn" onclick="switchView('screen-modal')">2. AI Risk &amp; Buffer Modal</button>
+    <button class="proto-btn" onclick="switchView('screen-dashboard')">3. Proactive Engagement Hub</button>
+    <button class="proto-btn" onclick="switchView('state-loading')">State: Loading</button>
+    <button class="proto-btn" onclick="switchView('state-lowconf')">State: Low Confidence Review</button>
+    <button class="proto-btn" onclick="switchView('state-fallback')">State: Fallback / Error</button>
+    <button class="proto-btn" onclick="switchView('state-empty')">State: Empty / New Patient</button>
+  </div>
+
+  <div class="container">
+
+    <!-- ==========================================
+         VIEW 1: MODIFIED BOOKING SCREEN
+         ========================================== -->
+    <div id="screen-booking" class="view-panel active">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; New Booking</div>
+      
+      <div class="page-header">
+        <div class="page-title">
+          <span>Schedule Outpatient Appointment</span>
+          <span class="badge badge-ai">⚡ AI-Assisted Capacity Allocation</span>
+        </div>
+        <div>
+          <button class="btn btn-secondary" onclick="switchView('screen-dashboard')">View Clinic Forecast Hub</button>
+        </div>
+      </div>
+
+      <!-- Active Patient Banner -->
+      <div class="patient-banner">
+        <div class="patient-info">
+          <div class="patient-avatar">JD</div>
+          <div class="patient-meta">
+            <h2>John Doe <span style="font-weight:normal; font-size:13px; color:#525252;">(ID: #1042-98)</span></h2>
+            <p>Male, 48 yrs | Contact: +1 (555) 234-5678 | Zip: 90210 (18.4 km from clinic)</p>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size:11px; color:#525252; margin-bottom:2px;">LONGITUDINAL ATTENDANCE SUMMARY</div>
+          <div><b>8 Past Visits:</b> 5 Completed, 3 No-Shows (37.5% Missed)</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Left: Slot Capacity & Selection -->
+        <div class="card">
+          <div class="card-title">
+            <span>Available Clinic Sessions &amp; Dynamic Capacity</span>
+            <span style="font-size:12px; font-weight:normal; color:#525252;">Provider: <b>Dr. Sarah Smith (General Medicine)</b> | Date: <b>Nov 15, 2026</b></span>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time Slot</th>
+                  <th>Deterministic Cap</th>
+                  <th>AI Buffer Recommendation</th>
+                  <th>Current State</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>08:30 AM – 09:00 AM</b></td>
+                  <td>2 / 2 slots filled</td>
+                  <td><span class="badge badge-rule">0 Buffer</span> (Low aggregate risk)</td>
+                  <td><span class="badge badge-rule">Fully Booked</span></td>
+                  <td><button class="btn btn-secondary btn-sm" disabled>Full</button></td>
+                </tr>
+                <tr style="background:#F0FDF4; border-left:3px solid var(--success);">
+                  <td><b>09:00 AM – 09:30 AM</b></td>
+                  <td>2 / 2 slots filled</td>
+                  <td>
+                    <span class="badge badge-ai">⚡ +1 Buffer Recommended</span>
+                    <div style="font-size:11px; color:#047857;">High expected no-show probability (p=0.74)</div>
+                  </td>
+                  <td><span class="badge badge-low">Buffer Available</span></td>
+                  <td><button class="btn btn-primary btn-sm" onclick="switchView('screen-modal')">Book with AI Buffer</button></td>
+                </tr>
+                <tr>
+                  <td><b>09:30 AM – 10:00 AM</b></td>
+                  <td>1 / 2 slots filled</td>
+                  <td><span class="badge badge-rule">Standard Capacity</span></td>
+                  <td><span class="badge badge-low">1 Open</span></td>
+                  <td><button class="btn btn-secondary btn-sm" onclick="switchView('screen-modal')">Select Slot</button></td>
+                </tr>
+                <tr>
+                  <td><b>10:00 AM – 10:30 AM</b></td>
+                  <td>0 / 2 slots filled</td>
+                  <td><span class="badge badge-rule">Standard Capacity</span></td>
+                  <td><span class="badge badge-low">2 Open</span></td>
+                  <td><button class="btn btn-secondary btn-sm" onclick="switchView('screen-modal')">Select Slot</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Real-Time AI Inference Preview -->
+        <div class="card" style="border-top: 3px solid var(--ai-purple);">
+          <div class="card-title">
+            <span>AI Patient Attendance Risk Preview</span>
+            <span class="badge badge-ai">Inference: 42ms</span>
+          </div>
+
+          <div style="text-align:center; padding: 10px 0 16px 0;">
+            <div style="font-size: 11px; text-transform:uppercase; color:#525252; margin-bottom:4px;">Predicted No-Show Probability</div>
+            <div style="font-size: 32px; font-weight:700; color:var(--danger);">74.2%</div>
+            <span class="badge badge-high">High Attendance Risk Tier</span>
+            <div style="font-size: 11px; color:#525252; margin-top:4px;">Calibrated Model Confidence: <b>92%</b> (Brier Score: 0.118)</div>
+          </div>
+
+          <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
+            <div style="font-size: 12px; font-weight:600; margin-bottom:8px;">Top Predictive Factors (TreeSHAP Attribution):</div>
+            
+            <div class="shap-bar-group">
+              <div class="shap-label">
+                <span>Appointment Lead Time (28 days)</span>
+                <span style="color:var(--danger); font-weight:600;">+24% Risk</span>
+              </div>
+              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 75%;"></div></div>
+            </div>
+
+            <div class="shap-bar-group">
+              <div class="shap-label">
+                <span>Past No-Show Rate (37.5%)</span>
+                <span style="color:var(--danger); font-weight:600;">+32% Risk</span>
+              </div>
+              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 88%;"></div></div>
+            </div>
+
+            <div class="shap-bar-group">
+              <div class="shap-label">
+                <span>Residence Distance (18.4 km)</span>
+                <span style="color:var(--danger); font-weight:600;">+8% Risk</span>
+              </div>
+              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 35%;"></div></div>
+            </div>
+
+            <div class="shap-bar-group">
+              <div class="shap-label">
+                <span>SMS Opt-In Verified</span>
+                <span style="color:var(--success); font-weight:600;">-12% Attendance Lift</span>
+              </div>
+              <div class="shap-track"><div class="shap-fill shap-fill-protective" style="width: 45%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 2: AI RISK & BUFFER MODAL DIALOG
+         ========================================== -->
+    <div id="screen-modal" class="view-panel">
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <h3 style="font-size:16px; font-weight:600; color:var(--navy);">Confirm Booking &amp; Review Dynamic Buffer</h3>
+              <p style="font-size:12px; color:#525252;">Patient: John Doe | Slot: Nov 15, 2026 at 09:00 AM</p>
+            </div>
+            <button class="proto-btn" onclick="switchView('screen-booking')">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Explainable Risk Card -->
+            <div style="background:#FFF1F2; border:1px solid #FFCCD1; border-radius:6px; padding:14px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge badge-ai">🤖 AI Decision Support</span>
+                <span class="badge badge-high">High No-Show Risk (74%)</span>
+              </div>
+              <p style="font-size:13px; color:#4C0B0F;">
+                Based on 28-day advance booking window and 3 past missed appointments, this patient has a high probability of non-attendance.
+              </p>
+            </div>
+
+            <!-- Dynamic Recommendation Form -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-weight:600; font-size:13px; margin-bottom:6px;">Dynamic Clinic Capacity Action:</label>
+              <div style="border:1px solid var(--border); border-radius:6px; padding:12px; background:#F8FAFC;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                  <input type="radio" name="buffer-opt" checked style="margin-top:3px;">
+                  <div>
+                    <b>Accept AI Overbooking Buffer (+1 Dynamic Slot)</b>
+                    <div style="font-size:12px; color:#525252;">Permits booking without exceeding expected clinical consultation capacity.</div>
+                  </div>
+                </label>
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-top:10px;">
+                  <input type="radio" name="buffer-opt" style="margin-top:3px;">
+                  <div>
+                    <b>Maintain Strict Deterministic Cap (Reject Buffer)</b>
+                    <div style="font-size:12px; color:#525252;">Requires selecting an alternate empty time slot.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Proactive Intervention Checkbox -->
+            <div style="margin-bottom:16px;">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+                <input type="checkbox" checked>
+                <span><b>Queue Priority 2-Way Interactive SMS Reminder</b> (Dispatches 48h and 24h prior)</span>
+              </label>
+            </div>
+
+            <!-- Clerk Feedback & Override Rationale -->
+            <div>
+              <label style="display:block; font-size:12px; color:#525252; margin-bottom:4px;">Clerk Override / Rationale Note (Optional for Audit Log):</label>
+              <input type="text" placeholder="e.g., Patient confirmed transportation verbally" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="switchView('screen-booking')">Cancel</button>
+            <button class="btn btn-primary" onclick="alert('Appointment Persisted successfully with AI Prediction ID #84920'); switchView('screen-booking');">Confirm Schedule &amp; Log AI Decision</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 3: PROACTIVE ENGAGEMENT & FORECAST HUB
+         ========================================== -->
+    <div id="screen-dashboard" class="view-panel">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Clinical Capacity Forecast</div>
+      
+      <div class="page-header">
+        <div class="page-title">
+          <span>Clinic Attendance Forecast &amp; Proactive Triage Hub</span>
+          <span class="badge badge-ai">Real-Time Aggregates</span>
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="switchView('screen-booking')">+ Book New Patient</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid-3">
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div style="font-size:12px; color:#525252;">TOTAL BOOKED APPOINTMENTS</div>
+          <div style="font-size:26px; font-weight:700; margin:4px 0;">42 Patients</div>
+          <div style="font-size:12px; color:var(--text-muted);">Session: General Medicine (Nov 15)</div>
+        </div>
+
+        <div class="card" style="border-left:4px solid var(--danger);">
+          <div style="font-size:12px; color:#525252;">PREDICTED HIGH-RISK NO-SHOWS</div>
+          <div style="font-size:26px; font-weight:700; color:var(--danger); margin:4px 0;">11 Patients (26.2%)</div>
+          <div style="font-size:12px; color:#525252;">Dynamic Buffers Activated: <b>+6 Slots</b></div>
+        </div>
+
+        <div class="card" style="border-left:4px solid var(--success);">
+          <div style="font-size:12px; color:#525252;">EXPECTED ARRIVAL YIELD</div>
+          <div style="font-size:26px; font-weight:700; color:var(--success); margin:4px 0;">35 - 37 Patients</div>
+          <div style="font-size:12px; color:#525252;">Estimated Doctor Idle Time: <b>&lt; 4%</b> (Baseline: 28%)</div>
+        </div>
+      </div>
+
+      <!-- Outreach Queue Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>High-Risk Attendance Triage &amp; Reminder Dispatch Queue</span>
+          <button class="btn btn-secondary btn-sm" onclick="alert('Batch SMS Reminders dispatched to 11 high risk patients');">Dispatch All High-Priority Reminders</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Patient Name</th>
+                <th>Time Slot</th>
+                <th>No-Show Probability</th>
+                <th>Confidence</th>
+                <th>Top Predictive Factor</th>
+                <th>Reminder Status</th>
+                <th>Clerk Override</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>John Doe</b> (#1042)</td>
+                <td>09:00 AM</td>
+                <td><span class="badge badge-high">74.2% High</span></td>
+                <td>92%</td>
+                <td>Lead time (28d), Past no-shows (3)</td>
+                <td><span class="badge badge-med">Pending 48h SMS</span></td>
+                <td><button class="btn btn-secondary btn-sm">Adjust Buffer</button></td>
+              </tr>
+              <tr>
+                <td><b>Amina Khan</b> (#1104)</td>
+                <td>09:30 AM</td>
+                <td><span class="badge badge-high">81.5% High</span></td>
+                <td>89%</td>
+                <td>Distance (34 km), Public transit</td>
+                <td><span class="badge badge-low">Confirmed via SMS</span></td>
+                <td><button class="btn btn-secondary btn-sm">Lock Slot</button></td>
+              </tr>
+              <tr>
+                <td><b>Robert Chen</b> (#0982)</td>
+                <td>10:00 AM</td>
+                <td><span class="badge badge-low">14.1% Low</span></td>
+                <td>95%</td>
+                <td>100% past attendance, short lead time</td>
+                <td><span class="badge badge-rule">Standard Notice</span></td>
+                <td><button class="btn btn-secondary btn-sm" disabled>No Action</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 4: AI LOADING STATE
+         ========================================== -->
+    <div id="state-loading" class="view-panel">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; AI Inference Active</div>
+      <div class="banner banner-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span><b>AI Processing:</b> Calculating calibrated attendance probability and TreeSHAP attribution in sidecar microservice...</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Analyzing Patient History &amp; Environmental Factors</div>
+        <div class="skeleton skeleton-box" style="width: 50%;"></div>
+        <div class="skeleton skeleton-text" style="width: 80%;"></div>
+        <div class="skeleton skeleton-text" style="width: 65%;"></div>
+        <div class="skeleton skeleton-text" style="width: 90%;"></div>
+        <div style="margin-top: 20px; display:flex; gap:10px;">
+          <div class="skeleton skeleton-box" style="width: 120px; height:32px;"></div>
+          <div class="skeleton skeleton-box" style="width: 120px; height:32px;"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 5: LOW CONFIDENCE HUMAN REVIEW STATE
+         ========================================== -->
+    <div id="state-lowconf" class="view-panel">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Human Review Required</div>
+      
+      <div class="banner banner-warning">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <b>Low AI Confidence Detected (Model Confidence: 48% &lt; 70% Threshold):</b>
+          <span>Prediction variance is high due to conflicting patient visit patterns. Clinical protocol requires human clerk review before enabling overbooking.</span>
+        </div>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--warning);">
+        <div class="card-title">
+          <span>Manual Triage &amp; Human-in-the-Loop Override Required</span>
+          <span class="badge badge-med">Uncertain Prediction</span>
+        </div>
+        <p style="margin-bottom:14px; font-size:13px; color:#525252;">
+          Patient exhibits erratic attendance history (2 on-time visits, 2 no-shows, 1 cancellation). The algorithm recommends human intervention rather than automated slot adjustment.
+        </p>
+
+        <div style="background:#F9FAFB; border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:16px;">
+          <label style="display:block; font-weight:600; margin-bottom:6px;">Select Override Disposition:</label>
+          <select style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px; margin-bottom:10px;">
+            <option>Verify attendance verbally with patient over telephone (Recommended)</option>
+            <option>Manually approve +1 Overbooking buffer anyway (Supervisor override)</option>
+            <option>Enforce standard static 1-patient slot capacity (Reject buffer)</option>
+          </select>
+          <input type="text" placeholder="Mandatory clerk rationale for low-confidence override..." style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
+        </div>
+
+        <button class="btn btn-primary" onclick="alert('Human override saved to audit log.'); switchView('screen-booking');">Submit Clerk Assessment</button>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 6: FALLBACK / ERROR STATE
+         ========================================== -->
+    <div id="state-fallback" class="view-panel">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Safe Fallback Mode</div>
+
+      <div class="banner banner-danger">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+        </svg>
+        <div>
+          <b>AI Sidecar Service Unavailable (Circuit Breaker Tripped - HTTP 504 Gateway Timeout):</b>
+          <span>Graceful degradation active. Scheduling engine has reverted to 100% deterministic baseline rules. Clinical bookings are unblocked and operating safely.</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Standard Deterministic Outpatient Booking (Safe Fallback)</span>
+          <span class="badge badge-rule">⚙️ Deterministic Mode Only</span>
+        </div>
+        <p style="font-size:13px; color:#525252; margin-bottom:14px;">
+          Dynamic overbooking buffers and risk predictions are temporarily disabled. Standard capacity limits (max 2 patients per 30-min block) are being strictly enforced by Hibernate validation logic.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Time Slot</th>
+                <th>Configured Capacity</th>
+                <th>Allocated Bookings</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>09:00 AM – 09:30 AM</td>
+                <td>2 Patients</td>
+                <td>2 Patients</td>
+                <td><span class="badge badge-rule">Full (No AI Buffer)</span></td>
+                <td><button class="btn btn-secondary btn-sm" disabled>Full</button></td>
+              </tr>
+              <tr>
+                <td>09:30 AM – 10:00 AM</td>
+                <td>2 Patients</td>
+                <td>1 Patient</td>
+                <td><span class="badge badge-low">1 Open</span></td>
+                <td><button class="btn btn-primary btn-sm" onclick="alert('Appointment booked in standard deterministic mode.'); switchView('screen-booking');">Book Standard Slot</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 7: EMPTY STATE (NEW PATIENT)
+         ========================================== -->
+    <div id="state-empty" class="view-panel">
+      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; New Patient Registration</div>
+
+      <div class="patient-banner" style="border-left-color: #8A3FFC;">
+        <div class="patient-info">
+          <div class="patient-avatar" style="background:#F6F2FF; color:var(--ai-purple);">NP</div>
+          <div class="patient-meta">
+            <h2>Baby Fatima Noor <span style="font-weight:normal; font-size:13px; color:#525252;">(ID: #2091-01)</span></h2>
+            <p>Female, 3 weeks | Contact: +1 (555) 890-1234 | Status: First Hospital Registration</p>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <span class="badge badge-ai">New Patient Profile</span>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center; padding: 40px 20px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8A3FFC" stroke-width="1.5" style="margin-bottom:12px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <h3 style="font-size:16px; font-weight:600; margin-bottom:6px;">Insufficient Historical Data for Predictive Scoring</h3>
+        <p style="max-width:500px; margin:0 auto 16px auto; font-size:13px; color:#525252;">
+          Fatima Noor has zero previous hospital encounters in OpenMRS. The AI engine requires at least one historical clinic appointment to generate personalized attendance predictions.
+        </p>
+        <div style="display:inline-flex; gap:10px;">
+          <button class="btn btn-primary" onclick="alert('Assigned to standard pediatric slot.'); switchView('screen-booking');">Assign Standard Slot (Default Policy)</button>
+          <button class="btn btn-secondary" onclick="alert('Standard intake SMS queued.'); switchView('screen-booking');">Queue Welcome SMS</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchView(viewId) {
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.proto-btn').forEach(el => el.classList.remove('active'));
+      
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+
+      const buttons = document.querySelectorAll('.proto-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(viewId)) {
+          btn.classList.add('active');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
