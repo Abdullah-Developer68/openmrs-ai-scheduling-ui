@@ -4,752 +4,870 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenMRS 3.x - AI-Augmented Outpatient Scheduling Prototype</title>
+  
+  <!-- React 18 UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel Standalone for JSX compilation in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            carbonNavy: '#102C57',
+            carbonBlue: '#0F62FE',
+            carbonBlueHover: '#0043CE',
+            carbonGray10: '#F4F4F4',
+            carbonGray20: '#E0E0E0',
+            carbonGray50: '#8D8D8D',
+            carbonGray80: '#393939',
+            carbonGray100: '#161616',
+            aiPurple: '#8A3FFC',
+            aiPurpleBg: '#F6F2FF',
+            aiPurpleBorder: '#D4BBFF',
+            clinicalGreen: '#198038',
+            clinicalGreenBg: '#DEFBE6',
+            warningYellow: '#F1C21B',
+            warningBg: '#FDF3D8',
+            dangerRed: '#DA1E28',
+            dangerBg: '#FFE3E5'
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    :root {
-      --primary: #0F62FE;
-      --primary-dark: #0043CE;
-      --navy: #102C57;
-      --bg: #F4F7FB;
-      --card-bg: #FFFFFF;
-      --text-main: #161616;
-      --text-muted: #525252;
-      --border: #E0E0E0;
-      --success: #198038;
-      --success-light: #DEFBE6;
-      --warning: #F1C21B;
-      --warning-dark: #8A6D00;
-      --warning-light: #FDF3D8;
-      --danger: #DA1E28;
-      --danger-light: #FFE3E5;
-      --ai-purple: #8A3FFC;
-      --ai-purple-light: #F6F2FF;
-      --radius: 6px;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: var(--font-family); background: var(--bg); color: var(--text-main); font-size: 14px; line-height: 1.5; }
-
-    /* Top Navigation Bar */
-    header {
-      background: var(--navy);
-      color: #FFFFFF;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .skeleton-pulse {
+      animation: pulse-subtle 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 16px; }
-    .brand-badge { background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: normal; }
-    .nav-user { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #E0E0E0; }
-
-    /* Prototype State Switcher Toolbar */
-    .prototype-bar {
-      background: #262626;
-      color: #F4F4F4;
-      padding: 8px 24px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 12px;
-      flex-wrap: wrap;
-    }
-    .prototype-bar span { font-weight: 600; color: #A8A8A8; }
-    .proto-btn {
-      background: #393939;
-      color: #FFFFFF;
-      border: 1px solid #525252;
-      padding: 4px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.15s;
-    }
-    .proto-btn:hover { background: #525252; }
-    .proto-btn.active { background: var(--primary); border-color: var(--primary); font-weight: 600; }
-
-    /* Main Container */
-    .container { max-width: 1360px; margin: 24px auto; padding: 0 24px; }
-
-    /* Breadcrumb & Title */
-    .breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .page-title { font-size: 22px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: 10px; }
-
-    /* Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .badge-ai { background: var(--ai-purple-light); color: var(--ai-purple); border: 1px solid #D4BBFF; }
-    .badge-rule { background: #E0E0E0; color: #393939; border: 1px solid #C6C6C6; }
-    .badge-high { background: var(--danger-light); color: var(--danger); border: 1px solid #FFB3B8; }
-    .badge-med { background: var(--warning-light); color: var(--warning-dark); border: 1px solid #F1C21B; }
-    .badge-low { background: var(--success-light); color: var(--success); border: 1px solid #A7F0BA; }
-
-    /* Cards & Layout */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--navy); display: flex; justify-content: space-between; align-items: center; }
-
-    /* Patient Banner */
-    .patient-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #FFFFFF;
-      border-left: 4px solid var(--primary);
-      padding: 16px 20px;
-      border-radius: var(--radius);
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .patient-info { display: flex; gap: 24px; align-items: center; }
-    .patient-avatar {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: #E0E7FF; color: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 16px;
-    }
-    .patient-meta h2 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-    .patient-meta p { font-size: 12px; color: var(--text-muted); }
-
-    /* Grid Layout */
-    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
-
-    /* Tables */
-    .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    th { background: #F4F4F4; color: var(--text-muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: #FAFAFA; }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border-radius: 4px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: background 0.15s;
-    }
-    .btn-primary { background: var(--primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-secondary { background: #FFFFFF; border-color: var(--border); color: var(--text-main); }
-    .btn-secondary:hover { background: #F4F4F4; }
-    .btn-success { background: var(--success); color: #FFFFFF; }
-    .btn-danger { background: var(--danger); color: #FFFFFF; }
-    .btn-sm { padding: 4px 8px; font-size: 12px; }
-
-    /* System Banners */
-    .banner {
-      padding: 12px 16px;
-      border-radius: var(--radius);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 13px;
-    }
-    .banner-warning { background: var(--warning-light); border: 1px solid #F1C21B; color: #524000; }
-    .banner-danger { background: var(--danger-light); border: 1px solid var(--danger); color: #750E13; }
-    .banner-info { background: #EDF5FF; border: 1px solid #A6C8FF; color: #002D9C; }
-
-    /* SHAP Feature Contribution Bars */
-    .shap-bar-group { margin: 8px 0; }
-    .shap-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
-    .shap-track { background: #E0E0E0; height: 6px; border-radius: 3px; overflow: hidden; }
-    .shap-fill { height: 100%; border-radius: 3px; }
-    .shap-fill-risk { background: var(--danger); }
-    .shap-fill-protective { background: var(--success); }
-
-    /* Modal Overlay */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
-    }
-    .modal {
-      background: #FFFFFF;
-      border-radius: 8px;
-      width: 600px;
-      max-width: 90%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      overflow: hidden;
-    }
-    .modal-header {
-      background: #F4F7FB;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-body { padding: 20px; }
-    .modal-footer {
-      background: #F4F7FB;
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    /* Skeleton Loading State */
-    .skeleton {
-      background: linear-gradient(90deg, #F0F0F0 25%, #E0E0E0 50%, #F0F0F0 75%);
-      background-size: 200% 100%;
-      animation: skeleton-loading 1.5s infinite;
-      border-radius: 4px;
-    }
-    @keyframes skeleton-loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    .skeleton-text { height: 14px; margin-bottom: 8px; }
-    .skeleton-box { height: 40px; margin-bottom: 12px; }
-
-    /* Hide / Show Tabs */
-    .view-panel { display: none; }
-    .view-panel.active { display: block; }
   </style>
 </head>
-<body>
+<body class="bg-gray-50 text-carbonGray100 font-sans antialiased min-h-screen flex flex-col">
+  <div id="root"></div>
 
-  <!-- Top Navigation Header -->
-  <header>
-    <div class="brand">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-      </svg>
-      <span>OpenMRS 3.x Outpatient Clinic</span>
-      <span class="brand-badge">AI Scheduling Subsystem v2.1</span>
-    </div>
-    <div class="nav-user">
-      <span>Facility: <b>Regional Referral Hospital (ID: OPD-01)</b></span>
-      <span>User: <b>Clerk A. Rahman (Registration &amp; Triage)</b></span>
-    </div>
-  </header>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-  <!-- Prototype Interactive Control Toolbar -->
-  <div class="prototype-bar">
-    <span>PROTOTYPE VIEWS &amp; AI STATES:</span>
-    <button class="proto-btn active" onclick="switchView('screen-booking')">1. Modified Booking Screen</button>
-    <button class="proto-btn" onclick="switchView('screen-modal')">2. AI Risk &amp; Buffer Modal</button>
-    <button class="proto-btn" onclick="switchView('screen-dashboard')">3. Proactive Engagement Hub</button>
-    <button class="proto-btn" onclick="switchView('state-loading')">State: Loading</button>
-    <button class="proto-btn" onclick="switchView('state-lowconf')">State: Low Confidence Review</button>
-    <button class="proto-btn" onclick="switchView('state-fallback')">State: Fallback / Error</button>
-    <button class="proto-btn" onclick="switchView('state-empty')">State: Empty / New Patient</button>
-  </div>
+    // Sample Clinical Data Store
+    const PATIENTS = [
+      { id: 1042, name: "John Doe", gender: "Male", age: 46, phone: "+1 (555) 382-9102", distance: "18.4 km", visits: 8, missed: 3, chronic: "Hypertension, T2 Diabetes", priorSms: true },
+      { id: 1089, name: "Sarah Jenkins", gender: "Female", age: 34, phone: "+1 (555) 749-1092", distance: "4.2 km", visits: 12, missed: 1, chronic: "Asthma", priorSms: true },
+      { id: 1104, name: "David Kim", gender: "Male", age: 58, phone: "+1 (555) 621-8841", distance: "24.1 km", visits: 5, missed: 4, chronic: "Cardiovascular Disease", priorSms: false },
+      { id: 1205, name: "Baby Noah (Infant)", gender: "Male", age: 0.4, phone: "+1 (555) 901-3312", distance: "6.0 km", visits: 0, missed: 0, chronic: "Routine Immunization", priorSms: false }
+    ];
 
-  <div class="container">
+    const SLOTS = [
+      { id: 1, time: "09:00 AM - 09:30 AM", capacity: 2, booked: 2, doctor: "Dr. Robert Smith (OPD 2)", bufferAvailable: true },
+      { id: 2, time: "09:30 AM - 10:00 AM", capacity: 2, booked: 1, doctor: "Dr. Robert Smith (OPD 2)", bufferAvailable: false },
+      { id: 3, time: "10:00 AM - 10:30 AM", capacity: 2, booked: 2, doctor: "Dr. Robert Smith (OPD 2)", bufferAvailable: true },
+      { id: 4, time: "10:30 AM - 11:00 AM", capacity: 2, booked: 0, doctor: "Dr. Robert Smith (OPD 2)", bufferAvailable: false },
+      { id: 5, time: "11:00 AM - 11:30 AM", capacity: 2, booked: 2, doctor: "Dr. Robert Smith (OPD 2)", bufferAvailable: true }
+    ];
 
-    <!-- ==========================================
-         VIEW 1: MODIFIED BOOKING SCREEN
-         ========================================== -->
-    <div id="screen-booking" class="view-panel active">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; New Booking</div>
+    function App() {
+      // Navigation tab: 'dashboard' | 'booking' | 'forecast'
+      const [activeTab, setActiveTab] = useState('booking');
       
-      <div class="page-header">
-        <div class="page-title">
-          <span>Schedule Outpatient Appointment</span>
-          <span class="badge badge-ai">⚡ AI-Assisted Capacity Allocation</span>
-        </div>
-        <div>
-          <button class="btn btn-secondary" onclick="switchView('screen-dashboard')">View Clinic Forecast Hub</button>
-        </div>
-      </div>
+      // Operational AI states: 'normal' | 'loading' | 'confidence' | 'low-confidence' | 'circuit-breaker' | 'cold-start'
+      const [aiState, setAiState] = useState('normal');
+      
+      // Selected patient and slot
+      const [selectedPatientId, setSelectedPatientId] = useState(1042);
+      const [selectedSlotId, setSelectedSlotId] = useState(1);
+      
+      // Modal visibility
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      
+      // Overbooking policy and override state
+      const [bufferAccepted, setBufferAccepted] = useState(false);
+      const [clerkOverrideReason, setClerkOverrideReason] = useState('');
+      const [showToast, setShowToast] = useState(null);
 
-      <!-- Active Patient Banner -->
-      <div class="patient-banner">
-        <div class="patient-info">
-          <div class="patient-avatar">JD</div>
-          <div class="patient-meta">
-            <h2>John Doe <span style="font-weight:normal; font-size:13px; color:#525252;">(ID: #1042-98)</span></h2>
-            <p>Male, 48 yrs | Contact: +1 (555) 234-5678 | Zip: 90210 (18.4 km from clinic)</p>
+      const activePatient = useMemo(() => {
+        if (aiState === 'cold-start') {
+          return PATIENTS.find(p => p.id === 1205);
+        }
+        return PATIENTS.find(p => p.id === selectedPatientId) || PATIENTS[0];
+      }, [selectedPatientId, aiState]);
+
+      const activeSlot = useMemo(() => {
+        return SLOTS.find(s => s.id === selectedSlotId) || SLOTS[0];
+      }, [selectedSlotId]);
+
+      // Calculate risk scores based on state and patient
+      const riskData = useMemo(() => {
+        if (aiState === 'circuit-breaker') {
+          return null; // AI offline
+        }
+        if (aiState === 'cold-start') {
+          return {
+            probability: 22.0,
+            band: 'EMPTY_HISTORY',
+            confidence: 0,
+            factors: [
+              { name: "Population Baseline Prior", impact: "+0.22", isPositive: true },
+              { name: "Zero Prior Visits (Unindexed)", impact: "0.00", isPositive: false }
+            ]
+          };
+        }
+        if (aiState === 'low-confidence') {
+          return {
+            probability: 52.4,
+            band: 'INDETERMINATE',
+            confidence: 58,
+            factors: [
+              { name: "Lead Time (14 days)", impact: "+0.18", isPositive: true },
+              { name: "Sparse Regional Demographic", impact: "+0.16", isPositive: true },
+              { name: "Conflicting Transit Patterns", impact: "-0.12", isPositive: false }
+            ]
+          };
+        }
+        if (activePatient.id === 1042) { // John Doe
+          return {
+            probability: 74.2,
+            band: 'HIGH_RISK',
+            confidence: 92,
+            factors: [
+              { name: "Appointment Lead Time (28 days)", impact: "+0.28", isPositive: true },
+              { name: "Historical No-Show Ratio (37.5%)", impact: "+0.22", isPositive: true },
+              { name: "Clinic Transit Distance (18.4 km)", impact: "+0.14", isPositive: true },
+              { name: "Prior SMS Confirmed", impact: "-0.15", isPositive: false }
+            ]
+          };
+        }
+        if (activePatient.id === 1104) { // David Kim
+          return {
+            probability: 81.0,
+            band: 'HIGH_RISK',
+            confidence: 95,
+            factors: [
+              { name: "Historical No-Show Ratio (80.0%)", impact: "+0.38", isPositive: true },
+              { name: "Transit Distance (24.1 km)", impact: "+0.21", isPositive: true },
+              { name: "No Cellular SMS on File", impact: "+0.16", isPositive: true }
+            ]
+          };
+        }
+        return {
+          probability: 14.5,
+          band: 'LOW_RISK',
+          confidence: 94,
+          factors: [
+            { name: "Historical Attendance (91.7%)", impact: "-0.32", isPositive: false },
+            { name: "Short Lead Time (3 days)", impact: "-0.18", isPositive: false },
+            { name: "Close Proximity (4.2 km)", impact: "-0.11", isPositive: false }
+          ]
+        };
+      }, [aiState, activePatient]);
+
+      const triggerToast = (msg) => {
+        setShowToast(msg);
+        setTimeout(() => setShowToast(null), 3500);
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          {/* Header */}
+          <header className="bg-carbonNavy text-white h-14 px-6 flex items-center justify-between shadow-md">
+            <div className="flex items-center space-x-3">
+              <span className="font-bold text-lg tracking-tight">OpenMRS 3.x</span>
+              <span className="bg-white/20 text-xs px-2.5 py-0.5 rounded-full font-medium">Outpatient Scheduling</span>
+              <span className="text-xs text-blue-200 border-l border-white/20 pl-3">Facility: St. Jude District Hospital (OPD 2)</span>
+            </div>
+            <div className="flex items-center space-x-4 text-xs">
+              <span className="text-gray-300">Logged in as: <strong className="text-white">Abdullah (FA23-BSE-137)</strong> & <strong className="text-white">Taha Shahid (FA23-BSE-096)</strong></span>
+              <span className="bg-green-700/80 px-2 py-1 rounded text-white font-mono">Build v2.4-ai</span>
+            </div>
+          </header>
+
+          {/* Prototype State Switcher Toolbar */}
+          <div className="bg-carbonGray100 text-gray-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs border-b border-gray-700 shadow-inner">
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-gray-400 uppercase tracking-wider">Screen Views:</span>
+              <button 
+                onClick={() => setActiveTab('dashboard')} 
+                className={`px-3 py-1 rounded transition ${activeTab === 'dashboard' ? 'bg-carbonBlue text-white font-semibold' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}>
+                1. Registry Dashboard
+              </button>
+              <button 
+                onClick={() => setActiveTab('booking')} 
+                className={`px-3 py-1 rounded transition ${activeTab === 'booking' ? 'bg-carbonBlue text-white font-semibold' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}>
+                2. AI Booking & Capacity Manager
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(true)} 
+                className="px-3 py-1 rounded bg-aiPurple hover:bg-purple-700 text-white font-semibold transition flex items-center gap-1">
+                <span>⚡ 3. Risk Review Modal</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('forecast')} 
+                className={`px-3 py-1 rounded transition ${activeTab === 'forecast' ? 'bg-carbonBlue text-white font-semibold' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}>
+                4. Forecast & Engagement Hub
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-gray-400 uppercase tracking-wider">AI Operational States:</span>
+              <select 
+                value={aiState} 
+                onChange={(e) => setAiState(e.target.value)}
+                className="bg-gray-800 text-white text-xs rounded px-2.5 py-1 border border-gray-600 focus:outline-none focus:border-carbonBlue">
+                <option value="normal">State 1: Normal (High Conf 92%)</option>
+                <option value="loading">State 2: Non-Blocking Loading (Skeleton)</option>
+                <option value="confidence">State 3: Tri-Layered Confidence Display</option>
+                <option value="low-confidence">State 4: Low-Confidence Warning (&lt;70%)</option>
+                <option value="circuit-breaker">State 5: Circuit Breaker Fallback</option>
+                <option value="cold-start">State 6: Cold-Start (Empty History)</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-size:11px; color:#525252; margin-bottom:2px;">LONGITUDINAL ATTENDANCE SUMMARY</div>
-          <div><b>8 Past Visits:</b> 5 Completed, 3 No-Shows (37.5% Missed)</div>
-        </div>
-      </div>
 
-      <div class="grid-2">
-        <!-- Left: Slot Capacity & Selection -->
-        <div class="card">
-          <div class="card-title">
-            <span>Available Clinic Sessions &amp; Dynamic Capacity</span>
-            <span style="font-size:12px; font-weight:normal; color:#525252;">Provider: <b>Dr. Sarah Smith (General Medicine)</b> | Date: <b>Nov 15, 2026</b></span>
+          {/* Toast Notification */}
+          {showToast && (
+            <div className="fixed bottom-5 right-5 z-50 bg-carbonNavy text-white px-5 py-3 rounded-lg shadow-2xl border-l-4 border-clinicalGreen flex items-center space-x-3 transition transform duration-300">
+              <span className="text-xl">✅</span>
+              <div>
+                <p className="font-semibold text-sm">System Action Executed</p>
+                <p className="text-xs text-gray-200">{showToast}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content Area */}
+          <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
+            {activeTab === 'dashboard' && (
+              <DashboardView 
+                onNavigateBooking={() => setActiveTab('booking')}
+                onTriggerForecast={() => setActiveTab('forecast')}
+              />
+            )}
+
+            {activeTab === 'booking' && (
+              <BookingView 
+                patients={PATIENTS}
+                slots={SLOTS}
+                activePatient={activePatient}
+                activeSlot={activeSlot}
+                aiState={aiState}
+                riskData={riskData}
+                bufferAccepted={bufferAccepted}
+                onSelectPatient={(id) => setSelectedPatientId(id)}
+                onSelectSlot={(id) => setSelectedSlotId(id)}
+                onOpenModal={() => setIsModalOpen(true)}
+                onResetBuffer={() => setBufferAccepted(false)}
+                onConfirmBooking={() => {
+                  triggerToast(`Appointment booked successfully for ${activePatient.name} in slot ${activeSlot.time}!`);
+                }}
+              />
+            )}
+
+            {activeTab === 'forecast' && (
+              <ForecastView 
+                onTriggerBatchSms={() => triggerToast("Dispatched 42 proactive 2-way SMS confirmation prompts via Twilio gateway!")}
+              />
+            )}
+          </main>
+
+          {/* Risk Review Modal Dialog */}
+          {isModalOpen && (
+            <RiskModal 
+              patient={activePatient}
+              slot={activeSlot}
+              riskData={riskData}
+              aiState={aiState}
+              bufferAccepted={bufferAccepted}
+              clerkOverrideReason={clerkOverrideReason}
+              onClose={() => setIsModalOpen(false)}
+              onAcceptBuffer={() => {
+                setBufferAccepted(true);
+                setIsModalOpen(false);
+                triggerToast(`Dynamic overbooking buffer approved for ${activePatient.name}. Slot capacity incremented (+1).`);
+              }}
+              onRejectBuffer={() => {
+                setBufferAccepted(false);
+                setIsModalOpen(false);
+                triggerToast(`Buffer suggestion declined. Strict capacity maintained.`);
+              }}
+              onOverrideChange={(val) => setClerkOverrideReason(val)}
+            />
+          )}
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-gray-200 py-4 px-6 text-xs text-gray-500 flex justify-between items-center">
+            <div>
+              OpenMRS Core 3.x • AI Outpatient Capacity Extension • Designed with IBM Carbon Design System v11
+            </div>
+            <div className="flex gap-4">
+              <a href="https://github.com/Abdullah-Developer68/openmrs-ai-scheduling-ui" target="_blank" className="text-carbonBlue hover:underline">
+                GitHub Repository
+              </a>
+              <a href="https://prototype-six-ecru.vercel.app" target="_blank" className="text-carbonBlue hover:underline">
+                Live Vercel Deployment
+              </a>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 1. DASHBOARD COMPONENT (SCREEN 1)
+    // ==========================================
+    function DashboardView({ onNavigateBooking, onTriggerForecast }) {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Outpatient Appointment Registry Dashboard</h1>
+              <p className="text-xs text-gray-500 mt-1">Review scheduled appointments, provider loads, and patient check-in statuses.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={onTriggerForecast} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-medium text-xs transition">
+                📊 Attendance Forecast Hub
+              </button>
+              <button onClick={onNavigateBooking} className="px-4 py-2 bg-carbonBlue hover:bg-carbonBlueHover text-white rounded font-medium text-xs transition">
+                + Book New Appointment
+              </button>
+            </div>
           </div>
 
-          <div class="table-container">
-            <table>
-              <thead>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Total Registered OPD Visits</div>
+              <div className="text-2xl font-bold text-gray-900 mt-1">42</div>
+              <div className="text-xs text-green-700 mt-1">● 8 Attended so far</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Scheduled Queue (Remaining)</div>
+              <div className="text-2xl font-bold text-gray-900 mt-1">34</div>
+              <div className="text-xs text-blue-700 mt-1">● Across 3 Physicians</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-aiPurpleBorder bg-aiPurpleBg/20 shadow-sm">
+              <div className="text-xs text-aiPurple font-semibold">Predicted High-Risk No-Shows</div>
+              <div className="text-2xl font-bold text-aiPurple mt-1">9</div>
+              <div className="text-xs text-purple-700 mt-1">⚡ 7 Overbook Buffers Active</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Physician Idle Time Recovered</div>
+              <div className="text-2xl font-bold text-green-700 mt-1">+2.5 hrs</div>
+              <div className="text-xs text-gray-500 mt-1">Recovered via Dynamic Slots</div>
+            </div>
+          </div>
+
+          {/* Appointment Table */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <span className="font-semibold text-sm text-gray-800">Today's Clinic Shift — Dr. Robert Smith (General Medicine)</span>
+              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">Deterministic Ceiling: 12 Patients</span>
+            </div>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200 uppercase tracking-wider">
                 <tr>
-                  <th>Time Slot</th>
-                  <th>Deterministic Cap</th>
-                  <th>AI Buffer Recommendation</th>
-                  <th>Current State</th>
-                  <th>Action</th>
+                  <th className="p-3 pl-6">Time Slot</th>
+                  <th className="p-3">Patient Name & ID</th>
+                  <th className="p-3">Type</th>
+                  <th className="p-3">AI No-Show Risk</th>
+                  <th className="p-3">Slot Ratio</th>
+                  <th className="p-3">Attendance Status</th>
+                  <th className="p-3 pr-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td><b>08:30 AM – 09:00 AM</b></td>
-                  <td>2 / 2 slots filled</td>
-                  <td><span class="badge badge-rule">0 Buffer</span> (Low aggregate risk)</td>
-                  <td><span class="badge badge-rule">Fully Booked</span></td>
-                  <td><button class="btn btn-secondary btn-sm" disabled>Full</button></td>
+              <tbody className="divide-y divide-gray-200">
+                <tr className="hover:bg-gray-50">
+                  <td className="p-3 pl-6 font-mono font-medium text-gray-800">09:00 AM</td>
+                  <td className="p-3 font-semibold text-carbonBlue">John Doe (#1042)</td>
+                  <td className="p-3">Hypertension Follow-up</td>
+                  <td className="p-3"><span className="bg-red-100 text-red-800 px-2 py-0.5 rounded font-semibold">⚡ 74.2% High</span></td>
+                  <td className="p-3"><span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-mono font-bold">2/2 + 1 Buffer</span></td>
+                  <td className="p-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">SCHEDULED</span></td>
+                  <td className="p-3 pr-6 text-right"><button onClick={onNavigateBooking} className="text-carbonBlue hover:underline">Manage</button></td>
                 </tr>
-                <tr style="background:#F0FDF4; border-left:3px solid var(--success);">
-                  <td><b>09:00 AM – 09:30 AM</b></td>
-                  <td>2 / 2 slots filled</td>
-                  <td>
-                    <span class="badge badge-ai">⚡ +1 Buffer Recommended</span>
-                    <div style="font-size:11px; color:#047857;">High expected no-show probability (p=0.74)</div>
-                  </td>
-                  <td><span class="badge badge-low">Buffer Available</span></td>
-                  <td><button class="btn btn-primary btn-sm" onclick="switchView('screen-modal')">Book with AI Buffer</button></td>
+                <tr className="hover:bg-gray-50">
+                  <td className="p-3 pl-6 font-mono font-medium text-gray-800">09:30 AM</td>
+                  <td className="p-3 font-semibold text-carbonBlue">Sarah Jenkins (#1089)</td>
+                  <td className="p-3">Asthma Routine Check</td>
+                  <td className="p-3"><span className="bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold">⚡ 14.5% Low</span></td>
+                  <td className="p-3"><span className="text-gray-600 font-mono">1/2 Normal</span></td>
+                  <td className="p-3"><span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">CHECKED_IN</span></td>
+                  <td className="p-3 pr-6 text-right"><button onClick={onNavigateBooking} className="text-carbonBlue hover:underline">Manage</button></td>
                 </tr>
-                <tr>
-                  <td><b>09:30 AM – 10:00 AM</b></td>
-                  <td>1 / 2 slots filled</td>
-                  <td><span class="badge badge-rule">Standard Capacity</span></td>
-                  <td><span class="badge badge-low">1 Open</span></td>
-                  <td><button class="btn btn-secondary btn-sm" onclick="switchView('screen-modal')">Select Slot</button></td>
-                </tr>
-                <tr>
-                  <td><b>10:00 AM – 10:30 AM</b></td>
-                  <td>0 / 2 slots filled</td>
-                  <td><span class="badge badge-rule">Standard Capacity</span></td>
-                  <td><span class="badge badge-low">2 Open</span></td>
-                  <td><button class="btn btn-secondary btn-sm" onclick="switchView('screen-modal')">Select Slot</button></td>
+                <tr className="hover:bg-gray-50">
+                  <td className="p-3 pl-6 font-mono font-medium text-gray-800">10:00 AM</td>
+                  <td className="p-3 font-semibold text-carbonBlue">David Kim (#1104)</td>
+                  <td className="p-3">Cardiology Consult</td>
+                  <td className="p-3"><span className="bg-red-100 text-red-800 px-2 py-0.5 rounded font-semibold">⚡ 81.0% High</span></td>
+                  <td className="p-3"><span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-mono font-bold">2/2 + 1 Buffer</span></td>
+                  <td className="p-3"><span className="bg-red-100 text-red-800 px-2 py-0.5 rounded">MISSED (No-Show)</span></td>
+                  <td className="p-3 pr-6 text-right"><button onClick={onNavigateBooking} className="text-carbonBlue hover:underline">Manage</button></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-
-        <!-- Right: Real-Time AI Inference Preview -->
-        <div class="card" style="border-top: 3px solid var(--ai-purple);">
-          <div class="card-title">
-            <span>AI Patient Attendance Risk Preview</span>
-            <span class="badge badge-ai">Inference: 42ms</span>
-          </div>
-
-          <div style="text-align:center; padding: 10px 0 16px 0;">
-            <div style="font-size: 11px; text-transform:uppercase; color:#525252; margin-bottom:4px;">Predicted No-Show Probability</div>
-            <div style="font-size: 32px; font-weight:700; color:var(--danger);">74.2%</div>
-            <span class="badge badge-high">High Attendance Risk Tier</span>
-            <div style="font-size: 11px; color:#525252; margin-top:4px;">Calibrated Model Confidence: <b>92%</b> (Brier Score: 0.118)</div>
-          </div>
-
-          <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
-            <div style="font-size: 12px; font-weight:600; margin-bottom:8px;">Top Predictive Factors (TreeSHAP Attribution):</div>
-            
-            <div class="shap-bar-group">
-              <div class="shap-label">
-                <span>Appointment Lead Time (28 days)</span>
-                <span style="color:var(--danger); font-weight:600;">+24% Risk</span>
-              </div>
-              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 75%;"></div></div>
-            </div>
-
-            <div class="shap-bar-group">
-              <div class="shap-label">
-                <span>Past No-Show Rate (37.5%)</span>
-                <span style="color:var(--danger); font-weight:600;">+32% Risk</span>
-              </div>
-              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 88%;"></div></div>
-            </div>
-
-            <div class="shap-bar-group">
-              <div class="shap-label">
-                <span>Residence Distance (18.4 km)</span>
-                <span style="color:var(--danger); font-weight:600;">+8% Risk</span>
-              </div>
-              <div class="shap-track"><div class="shap-fill shap-fill-risk" style="width: 35%;"></div></div>
-            </div>
-
-            <div class="shap-bar-group">
-              <div class="shap-label">
-                <span>SMS Opt-In Verified</span>
-                <span style="color:var(--success); font-weight:600;">-12% Attendance Lift</span>
-              </div>
-              <div class="shap-track"><div class="shap-fill shap-fill-protective" style="width: 45%;"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 2: AI RISK & BUFFER MODAL DIALOG
-         ========================================== -->
-    <div id="screen-modal" class="view-panel">
-      <div class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <div>
-              <h3 style="font-size:16px; font-weight:600; color:var(--navy);">Confirm Booking &amp; Review Dynamic Buffer</h3>
-              <p style="font-size:12px; color:#525252;">Patient: John Doe | Slot: Nov 15, 2026 at 09:00 AM</p>
-            </div>
-            <button class="proto-btn" onclick="switchView('screen-booking')">✕</button>
-          </div>
-
-          <div class="modal-body">
-            <!-- Explainable Risk Card -->
-            <div style="background:#FFF1F2; border:1px solid #FFCCD1; border-radius:6px; padding:14px; margin-bottom:16px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span class="badge badge-ai">🤖 AI Decision Support</span>
-                <span class="badge badge-high">High No-Show Risk (74%)</span>
-              </div>
-              <p style="font-size:13px; color:#4C0B0F;">
-                Based on 28-day advance booking window and 3 past missed appointments, this patient has a high probability of non-attendance.
-              </p>
-            </div>
-
-            <!-- Dynamic Recommendation Form -->
-            <div style="margin-bottom:16px;">
-              <label style="display:block; font-weight:600; font-size:13px; margin-bottom:6px;">Dynamic Clinic Capacity Action:</label>
-              <div style="border:1px solid var(--border); border-radius:6px; padding:12px; background:#F8FAFC;">
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                  <input type="radio" name="buffer-opt" checked style="margin-top:3px;">
-                  <div>
-                    <b>Accept AI Overbooking Buffer (+1 Dynamic Slot)</b>
-                    <div style="font-size:12px; color:#525252;">Permits booking without exceeding expected clinical consultation capacity.</div>
-                  </div>
-                </label>
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-top:10px;">
-                  <input type="radio" name="buffer-opt" style="margin-top:3px;">
-                  <div>
-                    <b>Maintain Strict Deterministic Cap (Reject Buffer)</b>
-                    <div style="font-size:12px; color:#525252;">Requires selecting an alternate empty time slot.</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Proactive Intervention Checkbox -->
-            <div style="margin-bottom:16px;">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
-                <input type="checkbox" checked>
-                <span><b>Queue Priority 2-Way Interactive SMS Reminder</b> (Dispatches 48h and 24h prior)</span>
-              </label>
-            </div>
-
-            <!-- Clerk Feedback & Override Rationale -->
-            <div>
-              <label style="display:block; font-size:12px; color:#525252; margin-bottom:4px;">Clerk Override / Rationale Note (Optional for Audit Log):</label>
-              <input type="text" placeholder="e.g., Patient confirmed transportation verbally" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="switchView('screen-booking')">Cancel</button>
-            <button class="btn btn-primary" onclick="alert('Appointment Persisted successfully with AI Prediction ID #84920'); switchView('screen-booking');">Confirm Schedule &amp; Log AI Decision</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 3: PROACTIVE ENGAGEMENT & FORECAST HUB
-         ========================================== -->
-    <div id="screen-dashboard" class="view-panel">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Clinical Capacity Forecast</div>
-      
-      <div class="page-header">
-        <div class="page-title">
-          <span>Clinic Attendance Forecast &amp; Proactive Triage Hub</span>
-          <span class="badge badge-ai">Real-Time Aggregates</span>
-        </div>
-        <div>
-          <button class="btn btn-primary" onclick="switchView('screen-booking')">+ Book New Patient</button>
-        </div>
-      </div>
-
-      <!-- KPI Summary Cards -->
-      <div class="grid-3">
-        <div class="card" style="border-left:4px solid var(--primary);">
-          <div style="font-size:12px; color:#525252;">TOTAL BOOKED APPOINTMENTS</div>
-          <div style="font-size:26px; font-weight:700; margin:4px 0;">42 Patients</div>
-          <div style="font-size:12px; color:var(--text-muted);">Session: General Medicine (Nov 15)</div>
-        </div>
-
-        <div class="card" style="border-left:4px solid var(--danger);">
-          <div style="font-size:12px; color:#525252;">PREDICTED HIGH-RISK NO-SHOWS</div>
-          <div style="font-size:26px; font-weight:700; color:var(--danger); margin:4px 0;">11 Patients (26.2%)</div>
-          <div style="font-size:12px; color:#525252;">Dynamic Buffers Activated: <b>+6 Slots</b></div>
-        </div>
-
-        <div class="card" style="border-left:4px solid var(--success);">
-          <div style="font-size:12px; color:#525252;">EXPECTED ARRIVAL YIELD</div>
-          <div style="font-size:26px; font-weight:700; color:var(--success); margin:4px 0;">35 - 37 Patients</div>
-          <div style="font-size:12px; color:#525252;">Estimated Doctor Idle Time: <b>&lt; 4%</b> (Baseline: 28%)</div>
-        </div>
-      </div>
-
-      <!-- Outreach Queue Table -->
-      <div class="card">
-        <div class="card-title">
-          <span>High-Risk Attendance Triage &amp; Reminder Dispatch Queue</span>
-          <button class="btn btn-secondary btn-sm" onclick="alert('Batch SMS Reminders dispatched to 11 high risk patients');">Dispatch All High-Priority Reminders</button>
-        </div>
-
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Time Slot</th>
-                <th>No-Show Probability</th>
-                <th>Confidence</th>
-                <th>Top Predictive Factor</th>
-                <th>Reminder Status</th>
-                <th>Clerk Override</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><b>John Doe</b> (#1042)</td>
-                <td>09:00 AM</td>
-                <td><span class="badge badge-high">74.2% High</span></td>
-                <td>92%</td>
-                <td>Lead time (28d), Past no-shows (3)</td>
-                <td><span class="badge badge-med">Pending 48h SMS</span></td>
-                <td><button class="btn btn-secondary btn-sm">Adjust Buffer</button></td>
-              </tr>
-              <tr>
-                <td><b>Amina Khan</b> (#1104)</td>
-                <td>09:30 AM</td>
-                <td><span class="badge badge-high">81.5% High</span></td>
-                <td>89%</td>
-                <td>Distance (34 km), Public transit</td>
-                <td><span class="badge badge-low">Confirmed via SMS</span></td>
-                <td><button class="btn btn-secondary btn-sm">Lock Slot</button></td>
-              </tr>
-              <tr>
-                <td><b>Robert Chen</b> (#0982)</td>
-                <td>10:00 AM</td>
-                <td><span class="badge badge-low">14.1% Low</span></td>
-                <td>95%</td>
-                <td>100% past attendance, short lead time</td>
-                <td><span class="badge badge-rule">Standard Notice</span></td>
-                <td><button class="btn btn-secondary btn-sm" disabled>No Action</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 4: AI LOADING STATE
-         ========================================== -->
-    <div id="state-loading" class="view-panel">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; AI Inference Active</div>
-      <div class="banner banner-info">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-        <span><b>AI Processing:</b> Calculating calibrated attendance probability and TreeSHAP attribution in sidecar microservice...</span>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Analyzing Patient History &amp; Environmental Factors</div>
-        <div class="skeleton skeleton-box" style="width: 50%;"></div>
-        <div class="skeleton skeleton-text" style="width: 80%;"></div>
-        <div class="skeleton skeleton-text" style="width: 65%;"></div>
-        <div class="skeleton skeleton-text" style="width: 90%;"></div>
-        <div style="margin-top: 20px; display:flex; gap:10px;">
-          <div class="skeleton skeleton-box" style="width: 120px; height:32px;"></div>
-          <div class="skeleton skeleton-box" style="width: 120px; height:32px;"></div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 5: LOW CONFIDENCE HUMAN REVIEW STATE
-         ========================================== -->
-    <div id="state-lowconf" class="view-panel">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Human Review Required</div>
-      
-      <div class="banner banner-warning">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <div>
-          <b>Low AI Confidence Detected (Model Confidence: 48% &lt; 70% Threshold):</b>
-          <span>Prediction variance is high due to conflicting patient visit patterns. Clinical protocol requires human clerk review before enabling overbooking.</span>
-        </div>
-      </div>
-
-      <div class="card" style="border-top:3px solid var(--warning);">
-        <div class="card-title">
-          <span>Manual Triage &amp; Human-in-the-Loop Override Required</span>
-          <span class="badge badge-med">Uncertain Prediction</span>
-        </div>
-        <p style="margin-bottom:14px; font-size:13px; color:#525252;">
-          Patient exhibits erratic attendance history (2 on-time visits, 2 no-shows, 1 cancellation). The algorithm recommends human intervention rather than automated slot adjustment.
-        </p>
-
-        <div style="background:#F9FAFB; border:1px solid var(--border); border-radius:6px; padding:14px; margin-bottom:16px;">
-          <label style="display:block; font-weight:600; margin-bottom:6px;">Select Override Disposition:</label>
-          <select style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px; margin-bottom:10px;">
-            <option>Verify attendance verbally with patient over telephone (Recommended)</option>
-            <option>Manually approve +1 Overbooking buffer anyway (Supervisor override)</option>
-            <option>Enforce standard static 1-patient slot capacity (Reject buffer)</option>
-          </select>
-          <input type="text" placeholder="Mandatory clerk rationale for low-confidence override..." style="width:100%; padding:8px; border:1px solid var(--border); border-radius:4px; font-size:13px;">
-        </div>
-
-        <button class="btn btn-primary" onclick="alert('Human override saved to audit log.'); switchView('screen-booking');">Submit Clerk Assessment</button>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 6: FALLBACK / ERROR STATE
-         ========================================== -->
-    <div id="state-fallback" class="view-panel">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; Safe Fallback Mode</div>
-
-      <div class="banner banner-danger">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-        </svg>
-        <div>
-          <b>AI Sidecar Service Unavailable (Circuit Breaker Tripped - HTTP 504 Gateway Timeout):</b>
-          <span>Graceful degradation active. Scheduling engine has reverted to 100% deterministic baseline rules. Clinical bookings are unblocked and operating safely.</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">
-          <span>Standard Deterministic Outpatient Booking (Safe Fallback)</span>
-          <span class="badge badge-rule">⚙️ Deterministic Mode Only</span>
-        </div>
-        <p style="font-size:13px; color:#525252; margin-bottom:14px;">
-          Dynamic overbooking buffers and risk predictions are temporarily disabled. Standard capacity limits (max 2 patients per 30-min block) are being strictly enforced by Hibernate validation logic.
-        </p>
-
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Time Slot</th>
-                <th>Configured Capacity</th>
-                <th>Allocated Bookings</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>09:00 AM – 09:30 AM</td>
-                <td>2 Patients</td>
-                <td>2 Patients</td>
-                <td><span class="badge badge-rule">Full (No AI Buffer)</span></td>
-                <td><button class="btn btn-secondary btn-sm" disabled>Full</button></td>
-              </tr>
-              <tr>
-                <td>09:30 AM – 10:00 AM</td>
-                <td>2 Patients</td>
-                <td>1 Patient</td>
-                <td><span class="badge badge-low">1 Open</span></td>
-                <td><button class="btn btn-primary btn-sm" onclick="alert('Appointment booked in standard deterministic mode.'); switchView('screen-booking');">Book Standard Slot</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ==========================================
-         VIEW 7: EMPTY STATE (NEW PATIENT)
-         ========================================== -->
-    <div id="state-empty" class="view-panel">
-      <div class="breadcrumb">Outpatient Services &gt; Appointment Scheduling &gt; New Patient Registration</div>
-
-      <div class="patient-banner" style="border-left-color: #8A3FFC;">
-        <div class="patient-info">
-          <div class="patient-avatar" style="background:#F6F2FF; color:var(--ai-purple);">NP</div>
-          <div class="patient-meta">
-            <h2>Baby Fatima Noor <span style="font-weight:normal; font-size:13px; color:#525252;">(ID: #2091-01)</span></h2>
-            <p>Female, 3 weeks | Contact: +1 (555) 890-1234 | Status: First Hospital Registration</p>
-          </div>
-        </div>
-        <div style="text-align: right;">
-          <span class="badge badge-ai">New Patient Profile</span>
-        </div>
-      </div>
-
-      <div class="card" style="text-align:center; padding: 40px 20px;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8A3FFC" stroke-width="1.5" style="margin-bottom:12px;">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="12" y1="18" x2="12" y2="12"/>
-          <line x1="9" y1="15" x2="15" y2="15"/>
-        </svg>
-        <h3 style="font-size:16px; font-weight:600; margin-bottom:6px;">Insufficient Historical Data for Predictive Scoring</h3>
-        <p style="max-width:500px; margin:0 auto 16px auto; font-size:13px; color:#525252;">
-          Fatima Noor has zero previous hospital encounters in OpenMRS. The AI engine requires at least one historical clinic appointment to generate personalized attendance predictions.
-        </p>
-        <div style="display:inline-flex; gap:10px;">
-          <button class="btn btn-primary" onclick="alert('Assigned to standard pediatric slot.'); switchView('screen-booking');">Assign Standard Slot (Default Policy)</button>
-          <button class="btn btn-secondary" onclick="alert('Standard intake SMS queued.'); switchView('screen-booking');">Queue Welcome SMS</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    function switchView(viewId) {
-      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.proto-btn').forEach(el => el.classList.remove('active'));
-      
-      const target = document.getElementById(viewId);
-      if (target) target.classList.add('active');
-
-      const buttons = document.querySelectorAll('.proto-btn');
-      buttons.forEach(btn => {
-        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(viewId)) {
-          btn.classList.add('active');
-        }
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      );
     }
+
+    // ==========================================
+    // 2. BOOKING VIEW COMPONENT (SCREEN 2)
+    // ==========================================
+    function BookingView({ patients, slots, activePatient, activeSlot, aiState, riskData, bufferAccepted, onSelectPatient, onSelectSlot, onOpenModal, onResetBuffer, onConfirmBooking }) {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Appointment Booking & Dynamic Slot Capacity Manager</h1>
+              <p className="text-xs text-gray-500 mt-1">Evaluate real-time attendance risk and assign intelligent overbooking buffers.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded border border-gray-300 font-mono">
+                ⚙️ Hard Limit: Max 3 Patients per Slot
+              </span>
+            </div>
+          </div>
+
+          {/* AI Banner Alerts */}
+          {aiState === 'circuit-breaker' && (
+            <div className="bg-yellow-50 border-l-4 border-warningYellow p-4 rounded shadow-sm text-xs text-amber-900 flex items-center justify-between">
+              <div>
+                <strong className="font-bold">⚠️ AI Sidecar Service Offline (Circuit Breaker Tripped)</strong>
+                <p className="mt-0.5">Inference timeout &gt; 100ms. System gracefully fell back to 100% deterministic baseline OpenMRS rules. Booking proceeds safely without AI risk recommendations.</p>
+              </div>
+              <span className="bg-warningYellow/30 text-amber-900 font-semibold px-2.5 py-1 rounded">Fallback Mode Active</span>
+            </div>
+          )}
+
+          {aiState === 'low-confidence' && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded shadow-sm text-xs text-amber-900 flex items-center justify-between">
+              <div>
+                <strong className="font-bold">⚡ Low-Confidence Model Warning (&lt; 70%)</strong>
+                <p className="mt-0.5">High variance detected for this patient cohort (Confidence: 58%). Automated buffer recommendations are guarded. Human clerk review required before overbooking.</p>
+              </div>
+              <span className="bg-amber-200 text-amber-900 font-semibold px-2.5 py-1 rounded">Mandatory Review</span>
+            </div>
+          )}
+
+          {/* Two-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left 2 Cols: Form and Slot Selection */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* Patient Selection Card */}
+              <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                  <span className="font-semibold text-sm text-gray-800">1. Select Patient Demographic</span>
+                  <span className="text-xs text-carbonBlue hover:underline cursor-pointer">+ Register New Patient</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Select Registered Patient</label>
+                    <select 
+                      value={activePatient.id} 
+                      onChange={(e) => { onSelectPatient(Number(e.target.value)); onResetBuffer(); }}
+                      className="w-full bg-gray-50 border border-gray-300 rounded p-2 text-xs focus:ring-1 focus:ring-carbonBlue focus:outline-none">
+                      {patients.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} (#{p.id}) — {p.chronic}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200 text-xs space-y-1">
+                    <div><span className="text-gray-500">Contact:</span> <strong className="font-mono">{activePatient.phone}</strong></div>
+                    <div><span className="text-gray-500">Distance to Clinic:</span> <strong>{activePatient.distance}</strong></div>
+                    <div><span className="text-gray-500">Longitudinal History:</span> <strong>{activePatient.visits} Visits ({activePatient.missed} Missed)</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slot Selection Table */}
+              <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                  <span className="font-semibold text-sm text-gray-800">2. Select Consultation Time Slot</span>
+                  <span className="text-xs text-gray-500">Dr. Robert Smith (General OPD)</span>
+                </div>
+
+                <div className="space-y-2">
+                  {slots.map(s => {
+                    const isSelected = s.id === activeSlot.id;
+                    const isFull = s.booked >= s.capacity;
+                    const showBuffer = isFull && s.bufferAvailable && aiState !== 'circuit-breaker';
+
+                    return (
+                      <div 
+                        key={s.id}
+                        onClick={() => { onSelectSlot(s.id); onResetBuffer(); }}
+                        className={`p-3.5 rounded-lg border cursor-pointer transition flex items-center justify-between ${
+                          isSelected 
+                            ? 'border-carbonBlue bg-blue-50/50 shadow-sm' 
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}>
+                        <div className="flex items-center space-x-3">
+                          <input 
+                            type="radio" 
+                            name="time_slot" 
+                            checked={isSelected} 
+                            onChange={() => onSelectSlot(s.id)}
+                            className="text-carbonBlue focus:ring-carbonBlue"
+                          />
+                          <div>
+                            <div className="font-semibold text-xs text-gray-900 font-mono">{s.time}</div>
+                            <div className="text-xs text-gray-500">{s.doctor}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 text-xs">
+                          {/* Capacity Pill */}
+                          <span className={`px-2.5 py-1 rounded font-mono font-medium ${
+                            isFull 
+                              ? 'bg-red-100 text-red-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {s.booked} / {s.capacity} Booked
+                          </span>
+
+                          {/* Dynamic AI Buffer Badge */}
+                          {showBuffer && (
+                            <span className="bg-aiPurpleBg text-aiPurple border border-aiPurpleBorder px-2.5 py-1 rounded font-semibold text-xs flex items-center gap-1">
+                              ⚡ +1 Dynamic Buffer Available
+                            </span>
+                          )}
+
+                          {isFull && !showBuffer && (
+                            <span className="bg-gray-100 text-gray-500 px-2.5 py-1 rounded text-xs">
+                              ⚙️ Locked
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Booking Button Actions */}
+                <div className="pt-4 border-t border-gray-100 flex justify-end space-x-3">
+                  <button 
+                    onClick={() => onConfirmBooking()}
+                    disabled={activeSlot.booked >= activeSlot.capacity && !bufferAccepted}
+                    className={`px-5 py-2 rounded text-xs font-semibold transition ${
+                      activeSlot.booked >= activeSlot.capacity && !bufferAccepted
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-carbonBlue hover:bg-carbonBlueHover text-white shadow-md'
+                    }`}>
+                    Confirm Booking
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right 1 Col: AI Attendance Risk Preview Card */}
+            <div className="space-y-6">
+              
+              {/* Risk Preview Card */}
+              <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                  <span className="font-semibold text-sm text-gray-900 flex items-center gap-1.5">
+                    <span className="text-aiPurple">⚡</span> AI Attendance Risk Preview
+                  </span>
+                  <span className="text-xs bg-purple-100 text-purple-800 font-mono px-2 py-0.5 rounded">XGBoost v1.4</span>
+                </div>
+
+                {/* State: Loading */}
+                {aiState === 'loading' && (
+                  <div className="space-y-3 py-4">
+                    <div className="h-6 bg-gray-200 rounded skeleton-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded skeleton-pulse w-3/4"></div>
+                    <div className="h-16 bg-purple-50 rounded skeleton-pulse mt-4"></div>
+                    <p className="text-xs text-center text-gray-500 italic mt-2">Executing sub-50ms sidecar inference...</p>
+                  </div>
+                )}
+
+                {/* State: Circuit Breaker Offline */}
+                {aiState === 'circuit-breaker' && (
+                  <div className="text-center py-8 space-y-2">
+                    <div className="text-3xl">🔌</div>
+                    <p className="text-xs font-semibold text-gray-800">Inference Service Unavailable</p>
+                    <p className="text-xs text-gray-500">Resilience4j Circuit Breaker active. Booking relies on deterministic rules.</p>
+                  </div>
+                )}
+
+                {/* State: Active Predictions */}
+                {aiState !== 'loading' && aiState !== 'circuit-breaker' && riskData && (
+                  <div className="space-y-4">
+                    {/* Probability & Confidence Meter */}
+                    <div className={`p-4 rounded-lg border ${
+                      riskData.probability > 70 
+                        ? 'bg-red-50 border-red-200' 
+                        : riskData.probability > 30 
+                        ? 'bg-yellow-50 border-yellow-200' 
+                        : 'bg-green-50 border-green-200'
+                    }`}>
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs text-gray-600 font-medium">Non-Attendance Probability</span>
+                        <span className={`text-2xl font-black ${
+                          riskData.probability > 70 ? 'text-dangerRed' : riskData.probability > 30 ? 'text-amber-700' : 'text-clinicalGreen'
+                        }`}>
+                          {riskData.probability}%
+                        </span>
+                      </div>
+                      
+                      {/* Model Confidence pill */}
+                      <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                        <span>Model Calibration Confidence:</span>
+                        <strong className="font-mono">{riskData.confidence}%</strong>
+                      </div>
+                    </div>
+
+                    {/* TreeSHAP Local Attributions */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-gray-700 block">Top Contributing Drivers (TreeSHAP):</span>
+                      <div className="space-y-2">
+                        {riskData.factors.map((f, idx) => (
+                          <div key={idx} className="text-xs">
+                            <div className="flex justify-between text-gray-700 mb-0.5">
+                              <span>{f.name}</span>
+                              <span className={`font-mono font-semibold ${f.isPositive ? 'text-dangerRed' : 'text-clinicalGreen'}`}>
+                                {f.impact}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div 
+                                className={`h-1.5 rounded-full ${f.isPositive ? 'bg-dangerRed' : 'bg-clinicalGreen'}`}
+                                style={{ width: `${Math.abs(parseFloat(f.impact)) * 200}%` }}>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dynamic Buffer Trigger CTA */}
+                    {activeSlot.booked >= activeSlot.capacity && (
+                      <div className="p-3 bg-aiPurpleBg border border-aiPurpleBorder rounded-lg space-y-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-aiPurple font-semibold">
+                          <span>⚡</span> Slot is Full, but High No-Show Predicted
+                        </div>
+                        <p className="text-gray-600 text-xs">
+                          {bufferAccepted 
+                            ? "✅ Overbooking buffer assigned! You can now confirm this appointment."
+                            : "Recommended: Allocate a concurrent dynamic buffer slot to avoid physician idle time."}
+                        </p>
+                        {!bufferAccepted ? (
+                          <button 
+                            onClick={onOpenModal}
+                            className="w-full py-2 bg-aiPurple hover:bg-purple-700 text-white font-semibold rounded text-xs shadow transition">
+                            Review & Assign Dynamic Buffer
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={onResetBuffer}
+                            className="w-full py-1 text-gray-500 hover:text-gray-700 text-xs underline">
+                            Cancel Assigned Buffer
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Design System & Governance Badge Card */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-xs text-gray-600 space-y-2">
+                <span className="font-semibold text-gray-800 block">Clinical AI Governance:</span>
+                <p>• Zero write authority for ML models.</p>
+                <p>• 100% human-in-the-loop override capability.</p>
+                <p>• Compliant with ISO/IEC 42001 & Carbon Design v11.</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 3. RISK REVIEW MODAL (SCREEN 3)
+    // ==========================================
+    function RiskModal({ patient, slot, riskData, aiState, bufferAccepted, clerkOverrideReason, onClose, onAcceptBuffer, onRejectBuffer, onOverrideChange }) {
+      const isHighRisk = riskData && riskData.probability >= 70;
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full border border-gray-200 overflow-hidden animate-fadeIn">
+            {/* Modal Header */}
+            <div className="bg-carbonNavy text-white p-4 flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">🛡️</span>
+                <h3 className="font-semibold text-sm">Attendance Risk & Dynamic Buffer Review</h3>
+              </div>
+              <button onClick={onClose} className="text-gray-300 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs">
+              {/* Alert Banner */}
+              <div className="p-3.5 bg-red-50 border-l-4 border-dangerRed rounded text-red-900">
+                <strong className="block font-bold text-sm">
+                  ⚡ High Non-Attendance Risk Predicted: {riskData ? riskData.probability : 74.2}%
+                </strong>
+                <p className="mt-1 text-xs text-gray-700">
+                  Target patient <strong>{patient.name}</strong> exhibits high statistical likelihood of unexcused absence for the requested slot (<strong>{slot.time}</strong>).
+                </p>
+              </div>
+
+              {/* Patient & Slot Details Summary */}
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded border border-gray-200 text-gray-700">
+                <div>
+                  <span className="text-gray-500 block">Patient Details:</span>
+                  <strong>{patient.name} (#{patient.id})</strong>
+                  <div className="text-gray-500 mt-0.5">{patient.chronic}</div>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Slot & Physician:</span>
+                  <strong>{slot.time}</strong>
+                  <div className="text-gray-500 mt-0.5">{slot.doctor}</div>
+                </div>
+              </div>
+
+              {/* Explanatory Factors */}
+              <div>
+                <span className="font-semibold text-gray-800 block mb-1.5">Algorithmic Justification (TreeSHAP):</span>
+                <ul className="space-y-1 list-disc list-inside text-gray-600">
+                  <li>28-day scheduling lead time correlates with 32% increased non-attendance variance.</li>
+                  <li>Historical attendance shows 3 out of 8 previous visits missed (37.5% no-show rate).</li>
+                  <li>Transit distance of 18.4 km exceeds median clinic catchment radius.</li>
+                </ul>
+              </div>
+
+              {/* Safety Checklist */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded space-y-1 text-blue-900">
+                <strong className="font-semibold block">Safety Guardrails & Double-Booking Rules:</strong>
+                <p>• Overbooking buffer is capped at +1 patient to guarantee physician shift safety.</p>
+                <p>• If both patients arrive, secondary triage buffer will be automatically activated.</p>
+              </div>
+
+              {/* Clerk Override Option */}
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">Clerk Override Rationale (Optional / Mandatory for Low Conf):</label>
+                <input 
+                  type="text" 
+                  value={clerkOverrideReason}
+                  onChange={(e) => onOverrideChange(e.target.value)}
+                  placeholder="e.g., Patient confirmed transportation arrangement over phone..."
+                  className="w-full bg-gray-50 border border-gray-300 rounded p-2 text-xs focus:ring-1 focus:ring-carbonBlue focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button 
+                onClick={onRejectBuffer}
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded text-xs text-gray-700 font-medium transition">
+                Decline Buffer (Maintain Cap)
+              </button>
+              <button 
+                onClick={onAcceptBuffer}
+                className="px-4 py-2 bg-aiPurple hover:bg-purple-700 text-white rounded text-xs font-semibold shadow transition flex items-center gap-1.5">
+                <span>⚡ Accept Overbooking Buffer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 4. FORECAST & ENGAGEMENT HUB (SCREEN 4)
+    // ==========================================
+    function ForecastView({ onTriggerBatchSms }) {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Clinic Attendance Forecast & Proactive Engagement Hub</h1>
+              <p className="text-xs text-gray-500 mt-1">Monitor daily attendance yield and trigger automated two-way SMS confirmation prompts.</p>
+            </div>
+            <button 
+              onClick={onTriggerBatchSms}
+              className="px-4 py-2 bg-carbonBlue hover:bg-carbonBlueHover text-white rounded font-medium text-xs transition flex items-center gap-2">
+              <span>📲 Dispatch Batch SMS Reminders</span>
+            </button>
+          </div>
+
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Expected Arrival Yield</div>
+              <div className="text-2xl font-bold text-clinicalGreen mt-1">84.5%</div>
+              <div className="text-xs text-gray-500 mt-1">Baseline was 68.2% (+16.3%)</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">High-Risk Patients Identified</div>
+              <div className="text-2xl font-bold text-dangerRed mt-1">14</div>
+              <div className="text-xs text-gray-500 mt-1">Flagged for Priority Reminders</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Two-Way SMS Confirmations</div>
+              <div className="text-2xl font-bold text-carbonBlue mt-1">38 / 42</div>
+              <div className="text-xs text-green-700 mt-1">90.5% Delivery Success</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 font-medium">Physician Idle Gaps Prevented</div>
+              <div className="text-2xl font-bold text-aiPurple mt-1">6 Hours</div>
+              <div className="text-xs text-gray-500 mt-1">Across 4 Outpatient Clinics</div>
+            </div>
+          </div>
+
+          {/* Engagement Queue */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 font-semibold text-sm text-gray-800">
+              Proactive Outreach Queue (High-Risk Cohort Scheduled in Next 48 Hours)
+            </div>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-100 text-gray-600 font-semibold border-b border-gray-200 uppercase tracking-wider">
+                <tr>
+                  <th className="p-3 pl-6">Patient</th>
+                  <th className="p-3">Scheduled Date</th>
+                  <th className="p-3">Predicted Risk</th>
+                  <th className="p-3">Top SHAP Driver</th>
+                  <th className="p-3">SMS Dispatch Status</th>
+                  <th className="p-3 pr-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr className="hover:bg-gray-50">
+                  <td className="p-3 pl-6 font-semibold text-gray-900">David Kim (#1104)</td>
+                  <td className="p-3 font-mono">Tomorrow, 10:00 AM</td>
+                  <td className="p-3"><span className="bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">81.0% High</span></td>
+                  <td className="p-3 text-gray-600">Past no-show ratio 80%</td>
+                  <td className="p-3"><span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">Delivered (Awaiting Reply)</span></td>
+                  <td className="p-3 pr-6 text-right"><button onClick={() => alert("Initiating manual nurse telephone confirmation for David Kim...")} className="text-carbonBlue hover:underline font-medium">Call Patient</button></td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="p-3 pl-6 font-semibold text-gray-900">John Doe (#1042)</td>
+                  <td className="p-3 font-mono">Tomorrow, 09:00 AM</td>
+                  <td className="p-3"><span className="bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">74.2% High</span></td>
+                  <td className="p-3 text-gray-600">Lead time 28 days</td>
+                  <td className="p-3"><span className="bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">Confirmed (Replied 'YES')</span></td>
+                  <td className="p-3 pr-6 text-right"><span className="text-gray-400">Complete</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>

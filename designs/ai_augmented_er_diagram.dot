@@ -1,0 +1,173 @@
+digraph AIAugmentedERD {
+    graph [rankdir=TB, bgcolor="transparent", fontname="Helvetica,Arial,sans-serif", nodesep=0.5, ranksep=0.7];
+    node [shape=none, fontname="Helvetica,Arial,sans-serif", fontsize=9];
+    edge [fontname="Helvetica,Arial,sans-serif", fontsize=8, color="#475569", penwidth=1.2, arrowsize=0.8];
+
+    // Subgraph for Baseline Unchanged Entities
+    subgraph cluster_baseline {
+        label="Baseline Domain Entities (Unchanged)";
+        style="dashed,rounded";
+        color="#94A3B8";
+        bgcolor="#F8FAFC";
+
+        PATIENT [label=<
+            <table border="1" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>PATIENT [Unchanged]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>patient_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left">gender</td><td align="right"><font color="#64748B">VARCHAR(10)</font></td></tr>
+                <tr><td align="left">birthdate</td><td align="right"><font color="#64748B">DATE</font></td></tr>
+                <tr><td align="left">voided</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+            </table>
+        >];
+
+        PROVIDER [label=<
+            <table border="1" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>PROVIDER [Unchanged]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>provider_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left">identifier</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+                <tr><td align="left">name</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+            </table>
+        >];
+
+        APPOINTMENT_TYPE [label=<
+            <table border="1" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_TYPE [Unchanged]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>appointment_type_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left">name</td><td align="right"><font color="#64748B">VARCHAR(100)</font></td></tr>
+                <tr><td align="left">duration_mins</td><td align="right"><font color="#64748B">INT</font></td></tr>
+            </table>
+        >];
+
+        APPOINTMENT_BLOCK [label=<
+            <table border="1" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_BLOCK [Unchanged]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>appointment_block_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left" port="prov_fk">provider_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left">location_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left">start_date / end_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            </table>
+        >];
+    }
+
+    // Subgraph for Modified Baseline Entities
+    subgraph cluster_modified {
+        label="Modified Baseline Entities (Augmented)";
+        style="dashed,rounded";
+        color="#D97706";
+        bgcolor="#FFFBEB";
+
+        APPOINTMENT_TIME_SLOT [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#D97706" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_TIME_SLOT [MODIFIED]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>appointment_time_slot_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left" port="block_fk">appointment_block_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left">start_date / end_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+                <tr><td align="left">unallocated_slots</td><td align="right"><font color="#64748B">INT</font></td></tr>
+                <tr><td align="left">count_of_appointments</td><td align="right"><font color="#64748B">INT</font></td></tr>
+                <tr><td align="left" bgcolor="#FEF3C7"><font color="#B45309"><b>+ dynamic_buffer_cap</b></font></td><td align="right" bgcolor="#FEF3C7"><font color="#B45309"><b>INT (AI Rec)</b></font></td></tr>
+                <tr><td align="left" bgcolor="#FEF3C7"><font color="#B45309"><b>+ slot_risk_index</b></font></td><td align="right" bgcolor="#FEF3C7"><font color="#B45309"><b>FLOAT (Aggregate)</b></font></td></tr>
+            </table>
+        >];
+
+        APPOINTMENT [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#D97706" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT [MODIFIED]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>appointment_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+                <tr><td align="left" port="slot_fk">time_slot_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left" port="pat_fk">patient_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left" port="type_fk">appointment_type_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+                <tr><td align="left">status</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left" bgcolor="#FEF3C7"><font color="#B45309"><b>+ risk_tier_cache</b></font></td><td align="right" bgcolor="#FEF3C7"><font color="#B45309"><b>VARCHAR(15)</b></font></td></tr>
+                <tr><td align="left" bgcolor="#FEF3C7"><font color="#B45309"><b>+ reminder_status</b></font></td><td align="right" bgcolor="#FEF3C7"><font color="#B45309"><b>VARCHAR(30)</b></font></td></tr>
+            </table>
+        >];
+    }
+
+    // Subgraph for New AI Entities
+    subgraph cluster_ai_new {
+        label="New AI Inference, Feedback & Governance Entities";
+        style="dashed,rounded";
+        color="#059669";
+        bgcolor="#ECFDF5";
+
+        AI_NO_SHOW_PREDICTION [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#059669" align="center" colspan="2"><font color="#FFFFFF"><b>AI_NO_SHOW_PREDICTION [NEW]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>prediction_id</b></td><td align="right"><font color="#047857">BIGINT (PK)</font></td></tr>
+                <tr><td align="left" port="appt_fk">appointment_id</td><td align="right"><font color="#047857">INT (FK)</font></td></tr>
+                <tr><td align="left" port="pat_fk">patient_id</td><td align="right"><font color="#047857">INT (FK)</font></td></tr>
+                <tr><td align="left" port="model_fk">model_id</td><td align="right"><font color="#047857">INT (FK)</font></td></tr>
+                <tr><td align="left">no_show_probability</td><td align="right"><font color="#64748B">FLOAT [0.0-1.0]</font></td></tr>
+                <tr><td align="left">calibrated_confidence</td><td align="right"><font color="#64748B">FLOAT [0.0-1.0]</font></td></tr>
+                <tr><td align="left">risk_tier</td><td align="right"><font color="#64748B">VARCHAR(15)</font></td></tr>
+                <tr><td align="left">shap_top_features_json</td><td align="right"><font color="#64748B">TEXT (Explain)</font></td></tr>
+                <tr><td align="left">created_at</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            </table>
+        >];
+
+        AI_MODEL_REGISTRY [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#059669" align="center" colspan="2"><font color="#FFFFFF"><b>AI_MODEL_REGISTRY [NEW]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>model_id</b></td><td align="right"><font color="#047857">INT (PK)</font></td></tr>
+                <tr><td align="left">model_version</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left">algorithm_type</td><td align="right"><font color="#64748B">VARCHAR(50)</font></td></tr>
+                <tr><td align="left">brier_score</td><td align="right"><font color="#64748B">FLOAT</font></td></tr>
+                <tr><td align="left">roc_auc</td><td align="right"><font color="#64748B">FLOAT</font></td></tr>
+                <tr><td align="left">is_active</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+            </table>
+        >];
+
+        AI_PREDICTION_FEEDBACK [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#059669" align="center" colspan="2"><font color="#FFFFFF"><b>AI_PREDICTION_FEEDBACK [NEW]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>feedback_id</b></td><td align="right"><font color="#047857">BIGINT (PK)</font></td></tr>
+                <tr><td align="left" port="pred_fk">prediction_id</td><td align="right"><font color="#047857">BIGINT (FK)</font></td></tr>
+                <tr><td align="left">clerk_action</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left">override_reason</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+                <tr><td align="left">actual_attendance_status</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left">feedback_timestamp</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            </table>
+        >];
+
+        PATIENT_ENGAGEMENT_REMINDER [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#059669" align="center" colspan="2"><font color="#FFFFFF"><b>PATIENT_ENGAGEMENT_REMINDER [NEW]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>reminder_id</b></td><td align="right"><font color="#047857">BIGINT (PK)</font></td></tr>
+                <tr><td align="left" port="appt_fk">appointment_id</td><td align="right"><font color="#047857">INT (FK)</font></td></tr>
+                <tr><td align="left" port="pat_fk">patient_id</td><td align="right"><font color="#047857">INT (FK)</font></td></tr>
+                <tr><td align="left">reminder_channel</td><td align="right"><font color="#64748B">VARCHAR(20)</font></td></tr>
+                <tr><td align="left">delivery_status</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left">patient_response</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+                <tr><td align="left">reminder_priority</td><td align="right"><font color="#64748B">INT (1-3)</font></td></tr>
+            </table>
+        >];
+
+        PATIENT_FEATURE_STORE [label=<
+            <table border="2" cellborder="0" cellspacing="0" cellpadding="3" bgcolor="#FFFFFF" style="rounded">
+                <tr><td bgcolor="#059669" align="center" colspan="2"><font color="#FFFFFF"><b>PATIENT_FEATURE_STORE [NEW]</b></font></td></tr>
+                <tr><td align="left" port="pk"><b>patient_id</b></td><td align="right"><font color="#047857">INT (PK/FK)</font></td></tr>
+                <tr><td align="left">total_past_appointments</td><td align="right"><font color="#64748B">INT</font></td></tr>
+                <tr><td align="left">total_no_shows</td><td align="right"><font color="#64748B">INT</font></td></tr>
+                <tr><td align="left">no_show_ratio</td><td align="right"><font color="#64748B">FLOAT</font></td></tr>
+                <tr><td align="left">median_lead_time_days</td><td align="right"><font color="#64748B">FLOAT</font></td></tr>
+                <tr><td align="left">residence_distance_km</td><td align="right"><font color="#64748B">FLOAT</font></td></tr>
+                <tr><td align="left">last_updated_at</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            </table>
+        >];
+    }
+
+    // Baseline Core Edges
+    PROVIDER:pk -> APPOINTMENT_BLOCK:prov_fk [label="1 : 0..N", color="#1E3A8A"];
+    APPOINTMENT_BLOCK:pk -> APPOINTMENT_TIME_SLOT:block_fk [label="1 : 1..N", color="#1E3A8A"];
+    APPOINTMENT_TIME_SLOT:pk -> APPOINTMENT:slot_fk [label="1 : 0..N", color="#D97706"];
+    APPOINTMENT_TYPE:pk -> APPOINTMENT:type_fk [label="1 : 0..N", color="#1E3A8A"];
+    PATIENT:pk -> APPOINTMENT:pat_fk [label="1 : 0..N", color="#1E3A8A"];
+
+    // AI Augmented Edges
+    APPOINTMENT:pk -> AI_NO_SHOW_PREDICTION:appt_fk [label="1 : 0..N\n(Stores per-booking score)", color="#059669", penwidth=1.8];
+    PATIENT:pk -> AI_NO_SHOW_PREDICTION:pat_fk [label="1 : 0..N", color="#059669"];
+    AI_MODEL_REGISTRY:pk -> AI_NO_SHOW_PREDICTION:model_fk [label="1 : 0..N\n(Tracks model provenance)", color="#059669"];
+    AI_NO_SHOW_PREDICTION:pk -> AI_PREDICTION_FEEDBACK:pred_fk [label="1 : 0..1\n(Clerk override & outcome)", color="#059669", penwidth=1.8];
+    APPOINTMENT:pk -> PATIENT_ENGAGEMENT_REMINDER:appt_fk [label="1 : 0..N\n(Risk-prioritized SMS/IVR)", color="#059669"];
+    PATIENT:pk -> PATIENT_FEATURE_STORE:pk [label="1 : 1\n(Precomputed ML features)", color="#059669", penwidth=1.8];
+}

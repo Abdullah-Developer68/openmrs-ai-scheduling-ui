@@ -1,0 +1,96 @@
+digraph ExistingERD {
+    graph [rankdir=LR, bgcolor="transparent", fontname="Helvetica,Arial,sans-serif", nodesep=0.6, ranksep=0.8];
+    node [shape=none, fontname="Helvetica,Arial,sans-serif", fontsize=10];
+    edge [fontname="Helvetica,Arial,sans-serif", fontsize=9, color="#475569", penwidth=1.2, arrowsize=0.8];
+
+    // Header Color for Baseline: #1E3A8A (Navy Blue)
+    
+    PATIENT [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>PATIENT</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>patient_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left">gender</td><td align="right"><font color="#64748B">VARCHAR(10)</font></td></tr>
+            <tr><td align="left">birthdate</td><td align="right"><font color="#64748B">DATE</font></td></tr>
+            <tr><td align="left">death_date</td><td align="right"><font color="#64748B">DATE (NULL)</font></td></tr>
+            <tr><td align="left">voided</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+        </table>
+    >];
+
+    PERSON_NAME [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>PERSON_NAME</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>person_name_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left" port="fk">person_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">given_name</td><td align="right"><font color="#64748B">VARCHAR(50)</font></td></tr>
+            <tr><td align="left">family_name</td><td align="right"><font color="#64748B">VARCHAR(50)</font></td></tr>
+            <tr><td align="left">preferred</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+        </table>
+    >];
+
+    PROVIDER [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>PROVIDER</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>provider_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left">person_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">identifier</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+            <tr><td align="left">name</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+            <tr><td align="left">retired</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+        </table>
+    >];
+
+    APPOINTMENT_TYPE [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_TYPE</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>appointment_type_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left">name</td><td align="right"><font color="#64748B">VARCHAR(100)</font></td></tr>
+            <tr><td align="left">duration_mins</td><td align="right"><font color="#64748B">INT</font></td></tr>
+            <tr><td align="left">description</td><td align="right"><font color="#64748B">VARCHAR(1024)</font></td></tr>
+            <tr><td align="left">retired</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+        </table>
+    >];
+
+    APPOINTMENT_BLOCK [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_BLOCK</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>appointment_block_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left" port="prov_fk">provider_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">location_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">start_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            <tr><td align="left">end_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            <tr><td align="left">voided</td><td align="right"><font color="#64748B">TINYINT(1)</font></td></tr>
+        </table>
+    >];
+
+    APPOINTMENT_TIME_SLOT [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT_TIME_SLOT</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>appointment_time_slot_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left" port="block_fk">appointment_block_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">start_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            <tr><td align="left">end_date</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+            <tr><td align="left">unallocated_slots</td><td align="right"><font color="#64748B">INT</font></td></tr>
+            <tr><td align="left">count_of_appointments</td><td align="right"><font color="#64748B">INT</font></td></tr>
+        </table>
+    >];
+
+    APPOINTMENT [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A" align="center" colspan="2"><font color="#FFFFFF"><b>APPOINTMENT</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>appointment_id</b></td><td align="right"><font color="#64748B">INT (PK)</font></td></tr>
+            <tr><td align="left" port="slot_fk">time_slot_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left" port="pat_fk">patient_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left" port="type_fk">appointment_type_id</td><td align="right"><font color="#64748B">INT (FK)</font></td></tr>
+            <tr><td align="left">status</td><td align="right"><font color="#64748B">VARCHAR(30)</font></td></tr>
+            <tr><td align="left">reason</td><td align="right"><font color="#64748B">VARCHAR(255)</font></td></tr>
+            <tr><td align="left">date_created</td><td align="right"><font color="#64748B">DATETIME</font></td></tr>
+        </table>
+    >];
+
+    // Relationships
+    PATIENT:pk -> PERSON_NAME:fk [label="1 : 1..N", arrowhead="crow", arrowtail="none"];
+    PATIENT:pk -> APPOINTMENT:pat_fk [label="1 : 0..N", arrowhead="crow", arrowtail="none"];
+    PROVIDER:pk -> APPOINTMENT_BLOCK:prov_fk [label="1 : 0..N", arrowhead="crow", arrowtail="none"];
+    APPOINTMENT_BLOCK:pk -> APPOINTMENT_TIME_SLOT:block_fk [label="1 : 1..N", arrowhead="crow", arrowtail="none"];
+    APPOINTMENT_TIME_SLOT:pk -> APPOINTMENT:slot_fk [label="1 : 0..N", arrowhead="crow", arrowtail="none"];
+    APPOINTMENT_TYPE:pk -> APPOINTMENT:type_fk [label="1 : 0..N", arrowhead="crow", arrowtail="none"];
+}

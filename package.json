@@ -1,0 +1,17 @@
+{
+  "name": "openmrs-ai-scheduling-ui",
+  "version": "1.0.0",
+  "description": "AI-Augmented Outpatient Appointment Scheduling Subsystem for OpenMRS 3.x using React and Tailwind CSS",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "deploy": "vercel --prod"
+  },
+  "keywords": ["openmrs", "healthcare", "machine-learning", "react", "tailwind", "carbon-design"],
+  "author": "Abdullah (FA23-BSE-137) & Taha Shahid (FA23-BSE-096)",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

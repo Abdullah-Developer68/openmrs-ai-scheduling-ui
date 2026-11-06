@@ -1,0 +1,85 @@
+digraph AIAugmentedDFD {
+    graph [rankdir=TB, bgcolor="transparent", fontname="Helvetica,Arial,sans-serif", nodesep=0.5, ranksep=0.6];
+    node [fontname="Helvetica,Arial,sans-serif", fontsize=10, penwidth=1.5];
+    edge [fontname="Helvetica,Arial,sans-serif", fontsize=9, color="#334155", penwidth=1.3, arrowsize=0.8];
+
+    // External Entities
+    User [label="Clinic Registration Clerk\n(Human Actor)", shape=box, style="filled,rounded", fillcolor="#EFF6FF", color="#2563EB"];
+    PatientActor [label="Patient / Caregiver\n(External Actor)", shape=box, style="filled,rounded", fillcolor="#FDF4FF", color="#A855F7"];
+
+    // Processes
+    subgraph cluster_workflow {
+        label="AI-Augmented Outpatient Scheduling Pipeline (OpenMRS + Inference Sidecar)";
+        style="filled,rounded";
+        fillcolor="#F8FAFC";
+        color="#CBD5E1";
+
+        P1 [label="1.0 Capture Booking Request\n& Input Sanitization", shape=ellipse, style="filled", fillcolor="#FFFFFF", color="#64748B"];
+        P2 [label="2.0 Deterministic Clinical\nValidation & Privilege Check", shape=ellipse, style="filled", fillcolor="#FEF3C7", color="#D97706"];
+        P3 [label="3.0 Feature Aggregation\n(Feature Store / Cache)", shape=ellipse, style="filled", fillcolor="#FFFFFF", color="#64748B"];
+        P4 [label="4.0 AI Inference Call\n(Calibrated XGBoost + TreeSHAP)\n[Circuit Breaker Protected]", shape=ellipse, style="filled", fillcolor="#ECFDF5", color="#059669"];
+        P5 [label="5.0 Dynamic Capacity &\nBuffer Recommendation Engine", shape=ellipse, style="filled", fillcolor="#FFFFFF", color="#64748B"];
+        P6 [label="6.0 Interactive Human Review\n& Transparent Explanation", shape=ellipse, style="filled", fillcolor="#E0E7FF", color="#4338CA"];
+        P7 [label="7.0 Deterministic Persistence\n& Multi-Tier Storage Dispatch", shape=ellipse, style="filled", fillcolor="#FFFFFF", color="#64748B"];
+        P8 [label="8.0 Proactive Engagement &\nFeedback Ingestion Pipeline", shape=ellipse, style="filled", fillcolor="#FDF2F8", color="#DB2777"];
+    }
+
+    // Data Stores (HTML table styling)
+    D_EHR [shape=none, label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#1E3A8A"><font color="#FFFFFF"><b>D1</b></font></td><td bgcolor="#F1F5F9"><b>Core OpenMRS DB (MySQL)</b></td></tr>
+        </table>
+    >];
+
+    D_FS [shape=none, label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#059669"><font color="#FFFFFF"><b>D2</b></font></td><td bgcolor="#F1F5F9"><b>Patient Feature Store (Redis/MySQL)</b></td></tr>
+        </table>
+    >];
+
+    D_AI [shape=none, label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#059669"><font color="#FFFFFF"><b>D3</b></font></td><td bgcolor="#F1F5F9"><b>AI Prediction &amp; Feedback Store</b></td></tr>
+        </table>
+    >];
+
+    D_LOG [shape=none, label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#FFFFFF" style="rounded">
+            <tr><td bgcolor="#64748B"><font color="#FFFFFF"><b>D4</b></font></td><td bgcolor="#F1F5F9"><b>Audit &amp; Telemetry Logs</b></td></tr>
+        </table>
+    >];
+
+    // Flows
+    User -> P1 [label="1. Patient ID, Slot, Reason"];
+    P1 -> P2 [label="Validated Form Data"];
+    P2 -> D_EHR [label="Verify Provider & Hours"];
+    P2 -> P3 [label="Pass Validated Context"];
+    
+    // Feature Fetch
+    P3 -> D_FS [label="Fetch Demographics & History"];
+    D_FS -> P3 [label="Aggregated Feature Vector"];
+    
+    // AI Inference
+    P3 -> P4 [label="Feature Vector (JSON)"];
+    P4 -> P5 [label="p(No-Show)=0.74, Conf=92%,\nTop SHAP Factors"];
+    
+    // Fallback path
+    P4 -> P6 [label="[Fallback on Timeout/Fail]\nDefault Static Capacity", style="dashed", color="#DC2626"];
+    
+    P5 -> P6 [label="Suggested Buffer (+1)"];
+    P6 -> User [label="Render Risk Badge & SHAP Bars"];
+    User -> P6 [label="Accept Suggestion OR\nOverride with Reason"];
+    
+    // Persistence
+    P6 -> P7 [label="Finalized Schedule & Feedback"];
+    P7 -> D_EHR [label="Insert Appointment, Update Slot"];
+    P7 -> D_AI [label="Persist Prediction & Feedback"];
+    P7 -> D_LOG [label="Log Latency & Telemetry"];
+    
+    // Post-booking and feedback
+    P7 -> P8 [label="Dispatch Scheduled Event"];
+    P8 -> PatientActor [label="Risk-Prioritized 2-Way SMS"];
+    PatientActor -> P8 [label="Confirmation / Reschedule"];
+    P8 -> D_AI [label="Update Attendance & Response"];
+    D_AI -> D_FS [label="Recalibration Batch", style="dashed", color="#059669"];
+}
